@@ -6,14 +6,13 @@ import { Order } from './models/Order.js';
 
 const db = async () => {
   try {
-    if (!process.env.MONGO_URL) {
-      throw new Error('MONGO_URL не задан в .env');
-    }
+    const mongoUrl = process.env.MONGO_URL;
+    if (!mongoUrl) throw new Error('❌ MONGO_URL не задана в переменных окружения!');
 
-    await mongoose.connect(process.env.MONGO_URL);
-    console.log('✅ MongoDB подключена');
+    await mongoose.connect(mongoUrl);
+    console.log('✅ MongoDB подключен');
 
-    // Seed данных
+    // --- Seed данных ---
     const defaultProducts = [
       { id: 1, name: 'Кольцо Сердце', price: 120, image: '/images/love.jpg', description: 'Кольцо в форме сердца', category: 'Кольца' },
       { id: 2, name: 'Кольцо Классика', price: 150, image: '/images/classika.jpg', description: 'Классическое кольцо', category: 'Кольца' },
@@ -25,7 +24,7 @@ const db = async () => {
       { id: 8, name: 'Кольцо Элегант', price: 220, image: '/images/elegant.jpg', description: 'Элегантное кольцо', category: 'Кольца' },
       { id: 9, name: 'Кольцо Лебедь', price: 210, image: '/images/lebed.jpg', description: 'Кольцо с лебединым дизайном', category: 'Кольца' },
       { id: 10, name: 'Кольцо Капля', price: 140, image: '/images/cap.jpg', description: 'Кольцо в форме капли', category: 'Кольца' },
-      // … продолжи все товары так же
+      // Добавь остальные товары по аналогии
     ];
 
     const createDefaultUsers = async () => [
@@ -34,52 +33,50 @@ const db = async () => {
     ];
 
     const seedDatabase = async () => {
-      try {
-        const productCount = await Product.countDocuments();
-        const userCount = await User.countDocuments();
+      const productCount = await Product.countDocuments();
+      const userCount = await User.countDocuments();
 
-        if (productCount === 0 || userCount === 0) {
-          console.log(`🧹 Очищаем старые данные...`);
-          await Product.deleteMany({});
-          await User.deleteMany({});
-          await Order.deleteMany({});
+      if (productCount === 0 || userCount === 0) {
+        console.log('🧹 Очищаем старые данные...');
+        await Product.deleteMany({});
+        await User.deleteMany({});
+        await Order.deleteMany({});
 
-          console.log(`📦 Добавляем тестовые товары...`);
-          const products = await Product.insertMany(defaultProducts);
+        console.log('📦 Добавляем тестовые товары...');
+        const products = await Product.insertMany(defaultProducts);
 
-          console.log(`👤 Добавляем пользователей...`);
-          const defaultUsers = await createDefaultUsers();
-          const users = await User.insertMany(defaultUsers);
+        console.log('👤 Добавляем пользователей...');
+        const users = await User.insertMany(await createDefaultUsers());
 
-          console.log(`🧾 Добавляем тестовый заказ...`);
-          await Order.create({
-            user: users[0]._id,
-            items: [{
-              product: products.find(p => p.id === 1)._id,
-              quantity: 1,
-              price: products.find(p => p.id === 1).price,
-              productName: products.find(p => p.id === 1).name
-            }],
-            totalAmount: products.find(p => p.id === 1).price,
-            status: "pending",
-            paymentStatus: "paid",
-            shippingAddress: {
-              firstName: "Алексей",
-              lastName: "Иванов",
-              address: "г. Москва, ул. Примерная, д. 10",
-              city: "Москва",
-              postalCode: "123456",
-              country: "Россия",
-              phone: "+79991234567"
-            }
-          });
+        console.log('🧾 Добавляем тестовый заказ...');
+        await Order.create({
+          user: users[0]._id,
+          items: [{
+            product: products[0]._id,
+            quantity: 1,
+            price: products[0].price,
+            productName: products[0].name
+          }],
+          totalAmount: products[0].price,
+          status: "pending",
+          paymentStatus: "paid",
+          shippingAddress: {
+            firstName: "Алексей",
+            lastName: "Иванов",
+            address: "г. Москва, ул. Примерная, д. 10",
+            city: "Москва",
+            postalCode: "123456",
+            country: "Россия",
+            phone: "+79991234567"
+          }
+        });
 
-          console.log(`✅ База успешно заполнена тестовыми данными!`);
-        } else {
-          console.log(`ℹ️ Данные уже есть, seed пропущен`);
-        }
-      } catch (err) {
-        console.error(`❌ Ошибка при заполнении базы:`, err.message);
+        console.log('✅ База успешно заполнена тестовыми данными!');
+        console.log('👤 Тестовые пользователи:');
+        console.log('   Email: alex@example.com, Password: password123');
+        console.log('   Email: maria@example.com, Password: password123');
+      } else {
+        console.log('ℹ️ Данные уже есть, seed пропущен');
       }
     };
 
