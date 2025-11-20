@@ -138,9 +138,7 @@ function Profile() {
 
       <div className="profile-actions">
         <a href="/cart" className="btn btn-primary">Перейти в корзину</a>
-        <button onClick={fetchUserOrders} className="btn btn-secondary">
-          Обновить историю заказов
-        </button>
+     
       </div>
     </div>
   );

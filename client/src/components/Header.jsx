@@ -1,13 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link , useNavigate } from "react-router-dom";
 import "../style/header.css";
 
 function Header() {
+  const navigate = useNavigate();
   const isLoggedIn = localStorage.getItem("isLoggedIn");
 
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("currentUser");
-    window.location.href = "/login";
+    navigate("/login");
+
   };
 
   return (
