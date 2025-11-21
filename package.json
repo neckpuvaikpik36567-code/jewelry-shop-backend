@@ -4,6 +4,7 @@
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "mongoose": "^8.20.1",
     "nodemailer": "^7.0.9",
     "react-router-dom": "^7.9.6",
     "yookassa": "^0.1.1"
