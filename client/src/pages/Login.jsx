@@ -7,38 +7,39 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+const handleLogin = async (e) => {
+  e.preventDefault();
 
-    try {
-      const response = await fetch(`${config.apiUrl}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+  try {
+    const response = await fetch(`${config.apiUrl}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("currentUser", email);
-        localStorage.setItem("token", data.token);
-        
-        alert("Вход выполнен успешно!");
-        window.location.href = "/";
-      } else {
-        alert(data.error || "Неверный email или пароль");
-      }
-    } catch (error) {
-      console.error("Ошибка:", error);
-      alert("Ошибка соединения с сервером");
+    if (data.success) {
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("currentUser", email);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.user.id);
+      
+      alert("Вход выполнен успешно!");
+      window.location.href = "/";
+    } else {
+      alert(data.message || "Неверный email или пароль");
     }
-  };
+  } catch (error) {
+    console.error("Ошибка:", error);
+    alert("Ошибка соединения с сервером");
+  }
+};
 
   return (
     <div className="auth-container">

@@ -20,28 +20,29 @@ const Register = () => {
   };
 
   const handleRegister = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const response = await fetch(`${config.apiUrl}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+  try {
+    const response = await fetch(`${config.apiUrl}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-      if (!response.ok) {
-        throw new Error(`Ошибка: ${response.status}`);
-      }
+    const data = await response.json();
 
-      const data = await response.json();
+    if (data.success) {
       console.log("✅ Успех:", data);
       alert("Регистрация прошла успешно!");
       navigate("/login");
-    } catch (error) {
-      console.error("Ошибка:", error);
-      alert("Ошибка регистрации: " + error.message);
+    } else {
+      throw new Error(data.message || `Ошибка: ${response.status}`);
     }
-  };
+  } catch (error) {
+    console.error("Ошибка:", error);
+    alert("Ошибка регистрации: " + error.message);
+  }
+};
 
   return (
     <div className="register-container">

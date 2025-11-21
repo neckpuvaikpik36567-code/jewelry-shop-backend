@@ -1,132 +1,238 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
-import { Product } from './models/Product.js';
-import { User } from './models/User.js';
-import { Order } from './models/Order.js';
-import authRoutes from './routes/auth.js';
-import orderRoutes from './routes/orderRoutes.js';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 const app = express();
 
-// CORS (важно для телефона!)
+// CORS
 app.use(cors({
   origin: "*",
   methods: "GET,POST,PUT,DELETE",
-  allowedHeaders: "Content-Type,Authorization"
+  credentials: true
 }));
 
 app.use(express.json());
 
-// Подключение к MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() =>
-    console.log(
-      `✅ MongoDB подключена в ${new Date().toLocaleString("ru-RU", {
-        timeZone: "Europe/Moscow",
-      })}`
-    )
-  )
-  .catch((err) => console.error(`❌ Ошибка подключения MongoDB:`, err.message));
+// Модели (упрощенные)
+const UserSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+}, { timestamps: true });
 
-// --- Твои тестовые данные, ничего не трогаю ---
-const defaultProducts = [/* весь массив как у тебя */];
+const OrderSchema = new mongoose.Schema({
+  userId: String,
+  fullName: String,
+  address: String,
+  phone: String,
+  items: Array,
+  total: Number,
+  orderNumber: String,
+  status: { type: String, default: 'pending' },
+  paymentStatus: { type: String, default: 'paid' }
+}, { timestamps: true });
 
-const createDefaultUsers = async () => [
-  { name: "Алексей Иванов", email: "alex@example.com", password: await bcrypt.hash("password123", 10) },
-  { name: "Мария Петрова", email: "maria@example.com", password: await bcrypt.hash("password123", 10) },
-];
+const User = mongoose.model('User', UserSchema);
+const Order = mongoose.model('Order', OrderSchema);
 
-const seedDatabase = async () => {
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Сервер Jewelry Shop работает!',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Регистрация
+app.post('/api/auth/register', async (req, res) => {
   try {
-    const productCount = await Product.countDocuments();
-    const userCount = await User.countDocuments();
-
-    if (productCount === 0 || userCount === 0) {
-      console.log(`🧹 Очищаем старые данные...`);
-      await Product.deleteMany({});
-      await User.deleteMany({});
-      await Order.deleteMany({});
-
-      console.log(`📦 Добавляем тестовые товары...`);
-      const products = await Product.insertMany(defaultProducts);
-
-      console.log(`👤 Добавляем пользователей...`);
-      const defaultUsers = await createDefaultUsers();
-      const users = await User.insertMany(defaultUsers);
-
-      console.log(`🧾 Добавляем тестовый заказ...`);
-      await Order.create({
-        user: users[0]._id,
-        items: [{
-          product: products.find(p => p.id === 1)._id,
-          quantity: 1,
-          price: products.find(p => p.id === 1).price,
-          productName: products.find(p => p.id === 1).name
-        }],
-        totalAmount: products.find(p => p.id === 1).price,
-        status: "pending",
-        paymentStatus: "paid",
-        shippingAddress: {
-          firstName: "Алексей",
-          lastName: "Иванов",
-          address: "г. Москва, ул. Примерная, д. 10",
-          city: "Москва",
-          postalCode: "123456",
-          country: "Россия",
-          phone: "+79991234567"
-        }
+    const { name, email, password } = req.body;
+    
+    // Проверяем, существует ли пользователь
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Пользователь с таким email уже существует' 
       });
-
-      console.log(`✅ База успешно заполнена тестовыми данными!`);
-    } else {
-      console.log(`ℹ️ Данные уже есть, seed пропущен`);
     }
-  } catch (err) {
-    console.error(`❌ Ошибка seed:`, err.message);
-  }
-};
 
-mongoose.connection.once("open", seedDatabase);
+    // Хешируем пароль
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    // Создаем пользователя
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword
+    });
 
-// Основные маршруты
-app.get("/", (req, res) => res.send("🚀 Сервер работает и подключён к базе данных!"));
-app.get("/products", async (req, res) => {
-  try {
-    const products = await Product.find();
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ message: "Ошибка при получении товаров" });
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Регистрация успешна!',
+      user: { id: user._id, name: user.name, email: user.email }
+    });
+
+  } catch (error) {
+    console.error('Ошибка регистрации:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ошибка сервера при регистрации' 
+    });
   }
 });
-app.get("/users", async (req, res) => {
+
+// Вход
+app.post('/api/auth/login', async (req, res) => {
   try {
-    const users = await User.find().select('-password');
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: "Ошибка при получении пользователей" });
+    const { email, password } = req.body;
+    
+    // Ищем пользователя
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Пользователь не найден' 
+      });
+    }
+
+    // Проверяем пароль
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Неверный пароль' 
+      });
+    }
+
+    // Создаем токен
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || 'fallback-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Вход успешен!',
+      token,
+      user: { id: user._id, name: user.name, email: user.email }
+    });
+
+  } catch (error) {
+    console.error('Ошибка входа:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ошибка сервера при входе' 
+    });
   }
 });
-app.get("/orders", async (req, res) => {
+
+// Создание заказа
+app.post('/api/orders/simple', async (req, res) => {
   try {
-    const orders = await Order.find().populate("user").populate("items.product");
+    const { fullName, address, phone, items, total, userId } = req.body;
+    
+    // Генерируем номер заказа
+    const orderNumber = 'ORD-' + Date.now();
+    
+    const order = new Order({
+      userId: userId || 'guest',
+      fullName,
+      address,
+      phone,
+      items,
+      total,
+      orderNumber,
+      status: 'pending',
+      paymentStatus: 'paid'
+    });
+
+    await order.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Заказ успешно создан!',
+      order: {
+        _id: order._id,
+        orderNumber: order.orderNumber,
+        total: order.total,
+        status: order.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка создания заказа:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ошибка при создании заказа' 
+    });
+  }
+});
+
+// Получение заказов пользователя
+app.get('/api/orders/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    
     res.json(orders);
-  } catch (err) {
+    
+  } catch (error) {
+    console.error('Ошибка получения заказов:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ошибка при получении заказов' 
+    });
+  }
+});
+
+// Получение всех заказов (для админа)
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
     res.status(500).json({ message: "Ошибка при получении заказов" });
   }
 });
 
-// API маршруты
-app.use("/api/auth", authRoutes);
-app.use("/api/orders", orderRoutes);
+// Подключение к MongoDB
+const mongoUrl = process.env.MONGO_URL || process.env.MONGO_URI;
 
-// --- ВАЖНО ДЛЯ RENDER!!! ---
+if (!mongoUrl) {
+  console.log('❌ MONGO_URL не настроен в переменных окружения');
+} else {
+  mongoose.connect(mongoUrl)
+    .then(() => console.log('✅ MongoDB подключена'))
+    .catch(err => console.log('❌ Ошибка MongoDB:', err.message));
+}
+
+// Корневой маршрут
+app.get('/', (req, res) => {
+  res.json({ 
+    message: '🚀 Сервер Jewelry Shop работает!', 
+    endpoints: {
+      health: '/api/health',
+      register: '/api/auth/register',
+      login: '/api/auth/login',
+      createOrder: '/api/orders/simple',
+      userOrders: '/api/orders/user/:userId'
+    }
+  });
+});
+
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, "0.0.0.0", () =>
-  console.log(`🚀 Сервер запущен на порту ${PORT}`)
-);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Сервер запущен на порту ${PORT}`);
+  console.log(`📍 URL: https://curs-1.onrender.com`);
+});
