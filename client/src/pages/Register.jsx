@@ -9,6 +9,7 @@ const Register = () => {
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -20,29 +21,45 @@ const Register = () => {
   };
 
   const handleRegister = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const response = await fetch(`${config.apiUrl}/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+    try {
+      console.log("📱 Отправка регистрации...");
+      
+      const response = await fetch(`${config.apiUrl}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    const data = await response.json();
+      console.log("📊 Статус регистрации:", response.status);
 
-    if (data.success) {
-      console.log("✅ Успех:", data);
-      alert("Регистрация прошла успешно!");
-      navigate("/login");
-    } else {
-      throw new Error(data.message || `Ошибка: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Ответ регистрации:", data);
+
+      if (data.success) {
+        alert("🎉 Регистрация прошла успешно!");
+        navigate("/login");
+      } else {
+        throw new Error(data.message || "Ошибка регистрации");
+      }
+    } catch (error) {
+      console.error("❌ Ошибка:", error);
+      
+      if (error.message.includes("Failed to fetch")) {
+        alert("📡 Не удалось подключиться к серверу. Проверьте интернет-соединение.");
+      } else {
+        alert("❌ Ошибка регистрации: " + error.message);
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Ошибка:", error);
-    alert("Ошибка регистрации: " + error.message);
-  }
-};
+  };
 
   return (
     <div className="register-container">
@@ -57,6 +74,7 @@ const Register = () => {
           value={formData.name}
           onChange={handleChange}
           required
+          disabled={loading}
         />
 
         <label>Email:</label>
@@ -67,6 +85,7 @@ const Register = () => {
           value={formData.email}
           onChange={handleChange}
           required
+          disabled={loading}
         />
 
         <label>Пароль:</label>
@@ -77,10 +96,11 @@ const Register = () => {
           value={formData.password}
           onChange={handleChange}
           required
+          disabled={loading}
         />
 
-        <button type="submit" className="btn-primary">
-          Зарегистрироваться
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? "⏳ Регистрация..." : "Зарегистрироваться"}
         </button>
 
         <div className="auth-link">

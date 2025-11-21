@@ -19,19 +19,20 @@ function Profile() {
 
   const fetchUserOrders = async () => {
     try {
-      const userId = "68f10b0e1cd3b39074630ad9";
+      const userId = localStorage.getItem("userId") || "68f10b0e1cd3b39074630ad9";
+      console.log("📱 Загрузка заказов для пользователя:", userId);
       
       const response = await fetch(`${config.apiUrl}/api/orders/user/${userId}`);
       
       if (response.ok) {
         const ordersData = await response.json();
-        console.log("Полученные заказы:", ordersData);
+        console.log("✅ Полученные заказы:", ordersData);
         setOrders(ordersData);
       } else {
-        console.error("Ошибка при загрузке заказов");
+        console.error("❌ Ошибка при загрузке заказов");
       }
     } catch (error) {
-      console.error("Ошибка подключения:", error);
+      console.error("❌ Ошибка подключения:", error);
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ function Profile() {
   if (loading) {
     return (
       <div className="profile-container">
-        <div className="loading">Загрузка заказов...</div>
+        <div className="loading">⏳ Загрузка заказов...</div>
       </div>
     );
   }
@@ -99,10 +100,10 @@ function Profile() {
               
               <div className="order-info">
                 <p><b>Дата заказа:</b> {formatDate(order.createdAt)}</p>
-                <p><b>Получатель:</b> {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}</p>
-                <p><b>Адрес:</b> {order.shippingAddress?.address}</p>
-                <p><b>Телефон:</b> {order.shippingAddress?.phone}</p>
-                <p className="order-total"><b>Сумма заказа:</b> ${order.totalAmount}</p>
+                <p><b>Получатель:</b> {order.fullName}</p>
+                <p><b>Адрес:</b> {order.address}</p>
+                <p><b>Телефон:</b> {order.phone}</p>
+                <p className="order-total"><b>Сумма заказа:</b> ${order.total}</p>
               </div>
 
               <div className="order-items-section">
@@ -111,7 +112,7 @@ function Profile() {
                   {order.items.map((item, index) => (
                     <div key={index} className="order-item">
                       <div className="item-info">
-                        <span className="item-name">{item.productName}</span>
+                        <span className="item-name">{item.name}</span>
                         <span className="item-quantity">× {item.quantity}</span>
                         <span className="item-price">${item.price}</span>
                       </div>
@@ -127,9 +128,6 @@ function Profile() {
                 <p className="payment-status">
                   <b>Оплата:</b> {order.paymentStatus === 'paid' ? '✅ Оплачено' : '⏳ Ожидает оплаты'}
                 </p>
-                {order.status === 'shipped' && (
-                  <p className="delivery-info">🚚 Доставка: в пути (1–2 дня)</p>
-                )}
               </div>
             </div>
           ))}
@@ -137,7 +135,7 @@ function Profile() {
       )}
 
       <div className="profile-actions">
-        <a href="/cart" className="btn btn-primary">Перейти в корзину</a>
+        <a href="/cart" className="btn btn-primary">🛒 Перейти в корзину</a>
       </div>
     </div>
   );

@@ -8,16 +8,21 @@ import jwt from 'jsonwebtoken';
 dotenv.config();
 const app = express();
 
-// CORS
+// CORS для мобильных устройств
 app.use(cors({
-  origin: "*",
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true
+  origin: "*", // Разрешаем все origins
+  methods: "GET,POST,PUT,DELETE,OPTIONS",
+  allowedHeaders: "Content-Type,Authorization,Accept,Origin,X-Requested-With",
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
+
+// Обрабатываем preflight запросы
+app.options('*', cors());
 
 app.use(express.json());
 
-// Модели (упрощенные)
+// Модели
 const UserSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
@@ -52,8 +57,17 @@ app.get('/api/health', (req, res) => {
 // Регистрация
 app.post('/api/auth/register', async (req, res) => {
   try {
+    console.log('📝 Регистрация:', req.body);
+    
     const { name, email, password } = req.body;
     
+    if (!name || !email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Все поля обязательны для заполнения' 
+      });
+    }
+
     // Проверяем, существует ли пользователь
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -93,8 +107,17 @@ app.post('/api/auth/register', async (req, res) => {
 // Вход
 app.post('/api/auth/login', async (req, res) => {
   try {
+    console.log('🔑 Вход:', req.body);
+    
     const { email, password } = req.body;
     
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email и пароль обязательны' 
+      });
+    }
+
     // Ищем пользователя
     const user = await User.findOne({ email });
     if (!user) {
@@ -139,8 +162,17 @@ app.post('/api/auth/login', async (req, res) => {
 // Создание заказа
 app.post('/api/orders/simple', async (req, res) => {
   try {
+    console.log('🛒 Создание заказа:', req.body);
+    
     const { fullName, address, phone, items, total, userId } = req.body;
     
+    if (!fullName || !address || !phone || !items || items.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Все поля обязательны для заказа' 
+      });
+    }
+
     // Генерируем номер заказа
     const orderNumber = 'ORD-' + Date.now();
     
@@ -182,6 +214,7 @@ app.post('/api/orders/simple', async (req, res) => {
 app.get('/api/orders/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log('📦 Получение заказов для пользователя:', userId);
     
     const orders = await Order.find({ userId }).sort({ createdAt: -1 });
     
@@ -196,7 +229,7 @@ app.get('/api/orders/user/:userId', async (req, res) => {
   }
 });
 
-// Получение всех заказов (для админа)
+// Получение всех заказов
 app.get('/api/orders', async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
@@ -204,6 +237,15 @@ app.get('/api/orders', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Ошибка при получении заказов" });
   }
+});
+
+// Тестовый маршрут для проверки
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'Тестовый маршрут работает!',
+    timestamp: new Date().toISOString(),
+    userAgent: req.headers['user-agent']
+  });
 });
 
 // Подключение к MongoDB
@@ -226,7 +268,8 @@ app.get('/', (req, res) => {
       register: '/api/auth/register',
       login: '/api/auth/login',
       createOrder: '/api/orders/simple',
-      userOrders: '/api/orders/user/:userId'
+      userOrders: '/api/orders/user/:userId',
+      test: '/api/test'
     }
   });
 });
@@ -235,4 +278,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
   console.log(`📍 URL: https://curs-1.onrender.com`);
+  console.log(`📱 Готов к мобильным запросам!`);
 });

@@ -42,6 +42,8 @@ function Cart() {
     }
 
     try {
+      console.log("📱 Создание заказа...");
+      
       const orderData = {
         fullName,
         address,
@@ -53,10 +55,8 @@ function Cart() {
           quantity: item.quantity || 1 
         })),
         total,
-        userId: "68f10b0e1cd3b39074630ad9",
+        userId: localStorage.getItem("userId") || "68f10b0e1cd3b39074630ad9",
       };
-
-      console.log("Отправка заказа:", orderData);
 
       const response = await fetch(`${config.apiUrl}/api/orders/simple`, {
         method: "POST",
@@ -66,9 +66,15 @@ function Cart() {
         body: JSON.stringify(orderData),
       });
 
+      console.log("📊 Статус заказа:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
 
-      if (response.ok) {
+      if (result.success) {
         const currentUser = localStorage.getItem("currentUser");
         if (currentUser) {
           const existingOrders = JSON.parse(localStorage.getItem("orders")) || {};
@@ -102,14 +108,18 @@ function Cart() {
         setAddress("");
         setPhone("");
         
-        alert(`✅ Заказ успешно оформлен! Номер заказа: ${result.order?.orderNumber || 'успешно создан'}`);
+        alert(`🎉 Заказ успешно оформлен! Номер заказа: ${result.order?.orderNumber}`);
       } else {
-        console.log("Ошибка сервера:", result);
-        alert(`❌ Ошибка: ${result.message || "Неизвестная ошибка"}`);
+        throw new Error(result.message || "Неизвестная ошибка");
       }
     } catch (err) {
-      console.error("Ошибка подключения:", err);
-      alert("❌ Ошибка подключения к серверу");
+      console.error("❌ Ошибка подключения:", err);
+      
+      if (err.message.includes("Failed to fetch")) {
+        alert("📡 Не удалось подключиться к серверу. Проверьте интернет-соединение.");
+      } else {
+        alert("❌ Ошибка оформления заказа: " + err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -137,7 +147,6 @@ function Cart() {
             <img src={item.image || item.img} alt={item.name} className="cart-item-image" />
             <div className="cart-item-info">
               <h3>{item.name}</h3>
-              <p className="cart-item-description">{item.description}</p>
               <p className="cart-item-price">${item.price}</p>
               
               <div className="quantity-controls">
@@ -183,6 +192,7 @@ function Cart() {
           value={fullName} 
           onChange={(e) => setFullName(e.target.value)} 
           required 
+          disabled={loading}
         />
         
         <input 
@@ -191,6 +201,7 @@ function Cart() {
           value={address} 
           onChange={(e) => setAddress(e.target.value)} 
           required 
+          disabled={loading}
         />
         
         <input 
@@ -199,6 +210,7 @@ function Cart() {
           value={phone} 
           onChange={(e) => setPhone(e.target.value)} 
           required 
+          disabled={loading}
         />
         
         <button 
@@ -206,7 +218,7 @@ function Cart() {
           className="checkout-btn"
           disabled={loading}
         >
-          {loading ? "Оформление..." : `Оплатить $${total.toFixed(2)}`}
+          {loading ? "⏳ Оформление..." : `💳 Оплатить $${total.toFixed(2)}`}
         </button>
       </form>
     </div>
