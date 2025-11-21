@@ -8,18 +8,16 @@ import jwt from 'jsonwebtoken';
 dotenv.config();
 const app = express();
 
-// CORS для мобильных устройств
+// CORS
 app.use(cors({
-  origin: "*", // Разрешаем все origins
+  origin: "*",
   methods: "GET,POST,PUT,DELETE,OPTIONS",
   allowedHeaders: "Content-Type,Authorization,Accept,Origin,X-Requested-With",
   credentials: true,
   optionsSuccessStatus: 200
 }));
 
-// Обрабатываем preflight запросы
 app.options('*', cors());
-
 app.use(express.json());
 
 // Модели
@@ -44,14 +42,70 @@ const OrderSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 const Order = mongoose.model('Order', OrderSchema);
 
+// Подключение к MongoDB
+const connectDB = async () => {
+  try {
+    // Пробуем оба варианта названий переменных
+    const mongoUrl = process.env.MONGO_URL || process.env.MONGO_URI;
+    
+    console.log('🔗 Попытка подключения к MongoDB...');
+    console.log('📝 URL:', mongoUrl ? 'установлен' : 'не установлен');
+    
+    if (!mongoUrl) {
+      throw new Error('MONGO_URL или MONGO_URI не настроены в переменных окружения');
+    }
+
+    await mongoose.connect(mongoUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    
+    console.log('✅ MongoDB успешно подключена');
+    console.log('📊 База данных:', mongoose.connection.db.databaseName);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Ошибка подключения к MongoDB:', error.message);
+    console.log('💡 Проверьте:');
+    console.log('   1. Правильность строки подключения');
+    console.log('   2. Наличие сети у MongoDB Atlas');
+    console.log('   3. IP адрес добавлен в whitelist MongoDB Atlas');
+    return false;
+  }
+};
+
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
   res.json({ 
     status: 'OK', 
     message: 'Сервер Jewelry Shop работает!',
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    database: dbStatus,
+    environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
   });
+});
+
+// Тестовый маршрут для проверки базы
+app.get('/api/test-db', async (req, res) => {
+  try {
+    // Считаем количество пользователей
+    const userCount = await User.countDocuments();
+    
+    res.json({ 
+      success: true, 
+      message: 'База данных работает корректно!',
+      database: 'connected',
+      userCount: userCount
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ошибка базы данных: ' + error.message,
+      database: 'error'
+    });
+  }
 });
 
 // Регистрация
@@ -65,6 +119,14 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: 'Все поля обязательны для заполнения' 
+      });
+    }
+
+    // Проверяем подключение к базе
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'База данных не подключена' 
       });
     }
 
@@ -88,6 +150,7 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
     await user.save();
+    console.log('✅ Пользователь сохранен:', user.email);
 
     res.json({ 
       success: true, 
@@ -96,7 +159,15 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Ошибка регистрации:', error);
+    console.error('❌ Ошибка регистрации:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Пользователь с таким email уже существует' 
+      });
+    }
+    
     res.status(500).json({ 
       success: false, 
       message: 'Ошибка сервера при регистрации' 
@@ -115,6 +186,14 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: 'Email и пароль обязательны' 
+      });
+    }
+
+    // Проверяем подключение к базе
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'База данных не подключена' 
       });
     }
 
@@ -143,6 +222,8 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    console.log('✅ Успешный вход:', user.email);
+
     res.json({ 
       success: true, 
       message: 'Вход успешен!',
@@ -151,10 +232,27 @@ app.post('/api/auth/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Ошибка входа:', error);
+    console.error('❌ Ошибка входа:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Ошибка сервера при входе' 
+    });
+  }
+});
+
+// Получение всех пользователей (для отладки)
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json({
+      success: true,
+      count: users.length,
+      users: users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка получения пользователей'
     });
   }
 });
@@ -214,7 +312,6 @@ app.post('/api/orders/simple', async (req, res) => {
 app.get('/api/orders/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('📦 Получение заказов для пользователя:', userId);
     
     const orders = await Order.find({ userId }).sort({ createdAt: -1 });
     
@@ -229,54 +326,23 @@ app.get('/api/orders/user/:userId', async (req, res) => {
   }
 });
 
-// Получение всех заказов
-app.get('/api/orders', async (req, res) => {
-  try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: "Ошибка при получении заказов" });
-  }
-});
-
-// Тестовый маршрут для проверки
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'Тестовый маршрут работает!',
-    timestamp: new Date().toISOString(),
-    userAgent: req.headers['user-agent']
-  });
-});
-
-// Подключение к MongoDB
-const mongoUrl = process.env.MONGO_URL || process.env.MONGO_URI;
-
-if (!mongoUrl) {
-  console.log('❌ MONGO_URL не настроен в переменных окружения');
-} else {
-  mongoose.connect(mongoUrl)
-    .then(() => console.log('✅ MongoDB подключена'))
-    .catch(err => console.log('❌ Ошибка MongoDB:', err.message));
-}
-
-// Корневой маршрут
-app.get('/', (req, res) => {
-  res.json({ 
-    message: '🚀 Сервер Jewelry Shop работает!', 
-    endpoints: {
-      health: '/api/health',
-      register: '/api/auth/register',
-      login: '/api/auth/login',
-      createOrder: '/api/orders/simple',
-      userOrders: '/api/orders/user/:userId',
-      test: '/api/test'
+// Инициализация сервера
+const startServer = async () => {
+  const dbConnected = await connectDB();
+  
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+    console.log(`📍 URL: https://curs-1.onrender.com`);
+    console.log(`🗄️  База данных: ${dbConnected ? '✅ Подключена' : '❌ Не подключена'}`);
+    
+    if (!dbConnected) {
+      console.log('💡 Для подключения базы:');
+      console.log('   1. Проверьте переменные окружения на Render');
+      console.log('   2. Убедитесь что MONGO_URL установлен правильно');
+      console.log('   3. Проверьте whitelist IP в MongoDB Atlas');
     }
   });
-});
+};
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Сервер запущен на порту ${PORT}`);
-  console.log(`📍 URL: https://curs-1.onrender.com`);
-  console.log(`📱 Готов к мобильным запросам!`);
-});
+startServer();
