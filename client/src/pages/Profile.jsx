@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import "../style/profile.css";
-
-const SERVER_URL = "https://curs-8bsq.onrender.com";
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -20,10 +18,14 @@ function Profile() {
 
   const fetchUserOrders = async () => {
     try {
-      const userId = "68f10b0e1cd3b39074630ad9"; // фиксированный userId
-      const response = await fetch(`${SERVER_URL}/api/orders/user/${userId}`);
+      // Используем фиксированный userId, как в корзине
+      const userId = "68f10b0e1cd3b39074630ad9";
+      
+      const response = await fetch(`http://localhost:5000/api/orders/user/${userId}`);
+      
       if (response.ok) {
         const ordersData = await response.json();
+        console.log("Полученные заказы:", ordersData);
         setOrders(ordersData);
       } else {
         console.error("Ошибка при загрузке заказов");
@@ -36,22 +38,22 @@ function Profile() {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("ru-RU", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const getStatusText = (status) => {
     const statusMap = {
-      pending: "⏳ Ожидает обработки",
-      processing: "🔄 В обработке",
-      shipped: "🚚 Отправлен",
-      delivered: "✅ Доставлен",
-      cancelled: "❌ Отменен",
+      'pending': '⏳ Ожидает обработки',
+      'processing': '🔄 В обработке',
+      'shipped': '🚚 Отправлен',
+      'delivered': '✅ Доставлен',
+      'cancelled': '❌ Отменен'
     };
     return statusMap[status] || status;
   };
@@ -81,6 +83,7 @@ function Profile() {
       <p className="profile-email">Ваш email: <b>{user}</b></p>
 
       <h3 className="profile-subtitle">📦 История заказов</h3>
+      
       {orders.length === 0 ? (
         <p className="no-orders">У вас пока нет заказов.</p>
       ) : (
@@ -89,8 +92,11 @@ function Profile() {
             <div key={order._id} className="order-card">
               <div className="order-header">
                 <h4>Заказ #{order.orderNumber}</h4>
-                <span className={`status status-${order.status}`}>{getStatusText(order.status)}</span>
+                <span className={`status status-${order.status}`}>
+                  {getStatusText(order.status)}
+                </span>
               </div>
+              
               <div className="order-info">
                 <p><b>Дата заказа:</b> {formatDate(order.createdAt)}</p>
                 <p><b>Получатель:</b> {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}</p>
@@ -98,6 +104,7 @@ function Profile() {
                 <p><b>Телефон:</b> {order.shippingAddress?.phone}</p>
                 <p className="order-total"><b>Сумма заказа:</b> ${order.totalAmount}</p>
               </div>
+
               <div className="order-items-section">
                 <h5>Товары:</h5>
                 <div className="order-items">
@@ -115,11 +122,12 @@ function Profile() {
                   ))}
                 </div>
               </div>
+
               <div className="order-footer">
                 <p className="payment-status">
-                  <b>Оплата:</b> {order.paymentStatus === "paid" ? "✅ Оплачено" : "⏳ Ожидает оплаты"}
+                  <b>Оплата:</b> {order.paymentStatus === 'paid' ? '✅ Оплачено' : '⏳ Ожидает оплаты'}
                 </p>
-                {order.status === "shipped" && (
+                {order.status === 'shipped' && (
                   <p className="delivery-info">🚚 Доставка: в пути (1–2 дня)</p>
                 )}
               </div>
@@ -130,6 +138,7 @@ function Profile() {
 
       <div className="profile-actions">
         <a href="/cart" className="btn btn-primary">Перейти в корзину</a>
+     
       </div>
     </div>
   );
