@@ -1,90 +1,102 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import "../style/checkout.css";
+
+const SERVER_URL = "https://curs-8bsq.onrender.com";
 
 function Checkout() {
-  const [cart, setCart] = useState(null);
+  const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState([]);
   const [shippingAddress, setShippingAddress] = useState({
-    firstName: '',
-    lastName: '',
-    address: '',
-    city: '',
-    postalCode: '',
-    country: '',
-    phone: ''
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    country: "",
+    phone: ""
   });
 
   useEffect(() => {
-    fetchCart();
+    const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    setCart(savedCart);
     fetchOrders();
   }, []);
 
-  const fetchCart = async () => {
-    try {
-      const response = await fetch('/api/cart', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const cartData = await response.json();
-      setCart(cartData);
-    } catch (error) {
-      console.error('Ошибка загрузки корзины:', error);
-    }
-  };
-
   const fetchOrders = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
     try {
-      const response = await fetch('/api/checkout/orders', {
+      const response = await fetch(`${SERVER_URL}/api/checkout/orders`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${token}`
         }
       });
-      const ordersData = await response.json();
-      setOrders(ordersData);
-    } catch (error) {
-      console.error('Ошибка загрузки заказов:', error);
-    }
-  };
-
-  const handleTestPayment = async () => {
-    if (!shippingAddress.firstName || !shippingAddress.address) {
-      alert('Пожалуйста, заполните адрес доставки');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch('/api/checkout/test-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ shippingAddress })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Заказ успешно создан! Номер заказа: ' + result.order.orderNumber);
-        setCart({ items: [], totalAmount: 0 });
-        fetchOrders();
-      } else {
-        alert('Ошибка: ' + result.message);
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
       }
     } catch (error) {
-      alert('Ошибка при создании заказа: ' + error.message);
+      console.error("Ошибка загрузки заказов:", error);
     }
-    setLoading(false);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setShippingAddress(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setShippingAddress((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTestPayment = async () => {
+    if (!shippingAddress.firstName || !shippingAddress.address) {
+      alert("Пожалуйста, заполните адрес доставки");
+      return;
+    }
+
+    if (!cart.length) {
+      alert("Корзина пуста!");
+      return;
+    }
+
+    setLoading(true);
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${SERVER_URL}/api/checkout/test-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          shippingAddress,
+          items: cart.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity || 1
+          })),
+          totalAmount: cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0),
+          userId: "68f10b0e1cd3b39074630ad9"
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`✅ Заказ успешно создан! Номер заказа: ${result.order.orderNumber}`);
+        setCart([]);
+        localStorage.removeItem("cart");
+        fetchOrders();
+      } else {
+        alert(`❌ Ошибка: ${result.message || "Неизвестная ошибка"}`);
+      }
+    } catch (error) {
+      console.error("Ошибка при создании заказа:", error);
+      alert("Ошибка при создании заказа: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!cart) return <div>Загрузка...</div>;
@@ -92,14 +104,14 @@ function Checkout() {
   return (
     <div className="checkout">
       <h2>Оформление заказа</h2>
-      
-      {cart.items.length === 0 ? (
+
+      {cart.length === 0 ? (
         <div>
           <p>Корзина пуста</p>
           {orders.length > 0 && (
             <div>
               <h3>История заказов</h3>
-              {orders.map(order => (
+              {orders.map((order) => (
                 <div key={order._id} className="order-item">
                   <p><strong>Заказ #{order.orderNumber}</strong></p>
                   <p>Сумма: {order.totalAmount} руб.</p>
@@ -112,92 +124,36 @@ function Checkout() {
         </div>
       ) : (
         <div className="checkout-content">
-          {/* Товары в корзине */}
           <div className="cart-items">
             <h3>Товары в заказе</h3>
-            {cart.items.map(item => (
-              <div key={item._id} className="checkout-item">
-                <span>{item.product.name}</span>
-                <span>{item.quantity} × {item.price} руб.</span>
-                <span>{(item.quantity * item.price).toFixed(2)} руб.</span>
+            {cart.map((item) => (
+              <div key={item.id} className="checkout-item">
+                <span>{item.name}</span>
+                <span>{item.quantity || 1} × {item.price} руб.</span>
+                <span>{((item.quantity || 1) * item.price).toFixed(2)} руб.</span>
               </div>
             ))}
             <div className="checkout-total">
-              <strong>Итого: {cart.totalAmount} руб.</strong>
+              <strong>Итого: {cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0)} руб.</strong>
             </div>
           </div>
 
-          {/* Форма адреса доставки */}
           <div className="shipping-form">
             <h3>Адрес доставки</h3>
-            <div className="form-group">
-              <input
-                type="text"
-                name="firstName"
-                placeholder="Имя"
-                value={shippingAddress.firstName}
-                onChange={handleInputChange}
-                required
-              />
-              <input
-                type="text"
-                name="lastName"
-                placeholder="Фамилия"
-                value={shippingAddress.lastName}
-                onChange={handleInputChange}
-              />
-            </div>
-            <input
-              type="text"
-              name="address"
-              placeholder="Адрес"
-              value={shippingAddress.address}
-              onChange={handleInputChange}
-              required
-            />
-            <div className="form-group">
-              <input
-                type="text"
-                name="city"
-                placeholder="Город"
-                value={shippingAddress.city}
-                onChange={handleInputChange}
-                required
-              />
-              <input
-                type="text"
-                name="postalCode"
-                placeholder="Почтовый индекс"
-                value={shippingAddress.postalCode}
-                onChange={handleInputChange}
-              />
-            </div>
-            <input
-              type="text"
-              name="country"
-              placeholder="Страна"
-              value={shippingAddress.country}
-              onChange={handleInputChange}
-            />
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Телефон"
-              value={shippingAddress.phone}
-              onChange={handleInputChange}
-            />
+            <input type="text" name="firstName" placeholder="Имя" value={shippingAddress.firstName} onChange={handleInputChange} required />
+            <input type="text" name="lastName" placeholder="Фамилия" value={shippingAddress.lastName} onChange={handleInputChange} />
+            <input type="text" name="address" placeholder="Адрес" value={shippingAddress.address} onChange={handleInputChange} required />
+            <input type="text" name="city" placeholder="Город" value={shippingAddress.city} onChange={handleInputChange} />
+            <input type="text" name="postalCode" placeholder="Почтовый индекс" value={shippingAddress.postalCode} onChange={handleInputChange} />
+            <input type="text" name="country" placeholder="Страна" value={shippingAddress.country} onChange={handleInputChange} />
+            <input type="tel" name="phone" placeholder="Телефон" value={shippingAddress.phone} onChange={handleInputChange} />
           </div>
 
-          {/* Кнопка оплаты */}
           <div className="payment-section">
             <h3>Тестовая оплата</h3>
             <p>Это тестовый платеж. Заказ будет создан сразу без реальной оплаты.</p>
-            <button 
-              onClick={handleTestPayment} 
-              disabled={loading}
-              className="payment-button"
-            >
-              {loading ? 'Создание заказа...' : 'Завершить тестовый заказ'}
+            <button onClick={handleTestPayment} disabled={loading} className="payment-button">
+              {loading ? "Создание заказа..." : "Завершить тестовый заказ"}
             </button>
           </div>
         </div>

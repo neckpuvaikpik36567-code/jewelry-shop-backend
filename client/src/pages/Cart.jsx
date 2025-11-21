@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import "../style/cart.css";
 import { Link } from "react-router-dom";
-import { API_URL } from "../config"; // Импортируем URL сервера
+
+const SERVER_URL = "https://curs-8bsq.onrender.com";
 
 function Cart() {
   const [cart, setCart] = useState([]);
@@ -22,7 +23,6 @@ function Cart() {
 
   const updateQuantity = (index, newQuantity) => {
     if (newQuantity < 1) return;
-
     const updatedCart = [...cart];
     updatedCart[index].quantity = newQuantity;
     setCart(updatedCart);
@@ -57,13 +57,10 @@ function Cart() {
           quantity: item.quantity || 1,
         })),
         total,
-        userId: "68f10b0e1cd3b39074630ad9", // если есть авторизация, можно заменить
+        userId: "68f10b0e1cd3b39074630ad9",
       };
 
-      console.log("Отправка заказа:", orderData);
-
-      // ✅ Используем Render URL вместо localhost
-      const response = await fetch(`${API_URL}/orders/simple`, {
+      const response = await fetch(`${SERVER_URL}/api/orders/simple`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +100,6 @@ function Cart() {
           localStorage.setItem("orders", JSON.stringify(existingOrders));
         }
 
-        // Очищаем корзину
         setCart([]);
         localStorage.removeItem("cart");
         setFullName("");
@@ -116,7 +112,6 @@ function Cart() {
           }`
         );
       } else {
-        console.log("Ошибка сервера:", result);
         alert(`❌ Ошибка: ${result.message || "Неизвестная ошибка"}`);
       }
     } catch (err) {
@@ -156,7 +151,6 @@ function Cart() {
 
             <div className="cart-item-info">
               <h3>{item.name}</h3>
-              <p className="cart-item-description">{item.description}</p>
               <p className="cart-item-price">${item.price}</p>
 
               <div className="quantity-controls">
