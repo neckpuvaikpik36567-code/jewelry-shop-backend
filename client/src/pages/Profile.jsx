@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../style/profile.css";
 
 const SERVER_URL = "https://curs-8bsq.onrender.com";
@@ -20,11 +20,13 @@ function Profile() {
 
   const fetchUserOrders = async () => {
     try {
-      const userId = "68f10b0e1cd3b39074630ad9";
+      const userId = "68f10b0e1cd3b39074630ad9"; // фиксированный userId
       const response = await fetch(`${SERVER_URL}/api/orders/user/${userId}`);
       if (response.ok) {
         const ordersData = await response.json();
         setOrders(ordersData);
+      } else {
+        console.error("Ошибка при загрузке заказов");
       }
     } catch (error) {
       console.error("Ошибка подключения:", error);
@@ -33,24 +35,45 @@ function Profile() {
     }
   };
 
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString('ru-RU', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("ru-RU", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-  const getStatusText = (status) => ({
-    'pending': '⏳ Ожидает обработки',
-    'processing': '🔄 В обработке',
-    'shipped': '🚚 Отправлен',
-    'delivered': '✅ Доставлен',
-    'cancelled': '❌ Отменен'
-  }[status] || status);
+  const getStatusText = (status) => {
+    const statusMap = {
+      pending: "⏳ Ожидает обработки",
+      processing: "🔄 В обработке",
+      shipped: "🚚 Отправлен",
+      delivered: "✅ Доставлен",
+      cancelled: "❌ Отменен",
+    };
+    return statusMap[status] || status;
+  };
 
-  if (!user) return (
-    <div className="profile-container">
-      <p className="not-logged">Вы не вошли в аккаунт</p>
-      <a href="/login" className="btn btn-primary">Войти в аккаунт</a>
-    </div>
-  );
+  if (!user) {
+    return (
+      <div className="profile-container">
+        <p className="not-logged">Вы не вошли в аккаунт</p>
+        <div className="profile-actions">
+          <a href="/login" className="btn btn-primary">Войти в аккаунт</a>
+        </div>
+      </div>
+    );
+  }
 
-  if (loading) return <div className="profile-container"><div className="loading">Загрузка заказов...</div></div>;
+  if (loading) {
+    return (
+      <div className="profile-container">
+        <div className="loading">Загрузка заказов...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-container">
@@ -58,7 +81,9 @@ function Profile() {
       <p className="profile-email">Ваш email: <b>{user}</b></p>
 
       <h3 className="profile-subtitle">📦 История заказов</h3>
-      {orders.length === 0 ? <p className="no-orders">У вас пока нет заказов.</p> :
+      {orders.length === 0 ? (
+        <p className="no-orders">У вас пока нет заказов.</p>
+      ) : (
         <div className="orders-list">
           {orders.map((order) => (
             <div key={order._id} className="order-card">
@@ -78,16 +103,34 @@ function Profile() {
                 <div className="order-items">
                   {order.items.map((item, index) => (
                     <div key={index} className="order-item">
-                      <span>{item.productName} × {item.quantity} — ${item.price}</span>
+                      <div className="item-info">
+                        <span className="item-name">{item.productName}</span>
+                        <span className="item-quantity">× {item.quantity}</span>
+                        <span className="item-price">${item.price}</span>
+                      </div>
+                      <div className="item-total">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
+              <div className="order-footer">
+                <p className="payment-status">
+                  <b>Оплата:</b> {order.paymentStatus === "paid" ? "✅ Оплачено" : "⏳ Ожидает оплаты"}
+                </p>
+                {order.status === "shipped" && (
+                  <p className="delivery-info">🚚 Доставка: в пути (1–2 дня)</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
-      }
-      <a href="/cart" className="btn btn-primary">Перейти в корзину</a>
+      )}
+
+      <div className="profile-actions">
+        <a href="/cart" className="btn btn-primary">Перейти в корзину</a>
+      </div>
     </div>
   );
 }

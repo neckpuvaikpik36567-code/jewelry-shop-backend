@@ -8,23 +8,27 @@ const Register = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const navigate = useNavigate();
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch(`${SERVER_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+
       if (!response.ok) throw new Error(`Ошибка: ${response.status}`);
       const data = await response.json();
       alert("Регистрация прошла успешно!");
       navigate("/login");
     } catch (error) {
+      console.error("Ошибка:", error);
       alert("Ошибка регистрации: " + error.message);
-      console.error(error);
     }
   };
 
