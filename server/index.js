@@ -109,12 +109,14 @@ app.get('/api/test-db', async (req, res) => {
 });
 
 // Регистрация
+// Регистрация
 app.post('/api/auth/register', async (req, res) => {
   try {
     console.log('📝 Регистрация:', req.body);
     
     const { name, email, password } = req.body;
     
+    // Проверяем обязательные поля
     if (!name || !email || !password) {
       return res.status(400).json({ 
         success: false, 
@@ -122,11 +124,28 @@ app.post('/api/auth/register', async (req, res) => {
       });
     }
 
+    // Проверяем email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Некорректный формат email' 
+      });
+    }
+
+    // Проверяем длину пароля
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Пароль должен быть не менее 6 символов' 
+      });
+    }
+
     // Проверяем подключение к базе
     if (mongoose.connection.readyState !== 1) {
       return res.status(500).json({ 
         success: false, 
-        message: 'База данных не подключена' 
+        message: 'Ошибка подключения к базе данных' 
       });
     }
 
@@ -144,8 +163,8 @@ app.post('/api/auth/register', async (req, res) => {
     
     // Создаем пользователя
     const user = new User({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword
     });
 
@@ -174,7 +193,6 @@ app.post('/api/auth/register', async (req, res) => {
     });
   }
 });
-
 // Вход
 app.post('/api/auth/login', async (req, res) => {
   try {

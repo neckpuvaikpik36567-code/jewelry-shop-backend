@@ -102,7 +102,16 @@
   color: #8a6c50;
   text-decoration: underline;
 }
-
+.error-message {
+  background-color: #ffebee;
+  border: 1px solid #f44336;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-weight: 500;
+}
 /* Адаптивность */
 @media (max-width: 480px) {
   .register-container {
