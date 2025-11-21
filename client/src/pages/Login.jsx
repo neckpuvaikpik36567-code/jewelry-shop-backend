@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../style/login.css";
 
+const API_URL = "https://curs-8bsq.onrender.com"; // твой сервер
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,25 +12,18 @@ function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Сохраняем токен или статус в localStorage
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("currentUser", email);
-        localStorage.setItem("token", data.token); // если используешь JWT
-        
+        localStorage.setItem("token", data.token);
         alert("Вход выполнен успешно!");
         window.location.href = "/";
       } else {

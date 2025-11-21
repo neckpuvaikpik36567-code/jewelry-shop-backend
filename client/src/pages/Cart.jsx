@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../style/cart.css";
 import { Link } from "react-router-dom";
+import { API_URL } from "../config"; // Импортируем URL сервера
 
 function Cart() {
   const [cart, setCart] = useState([]);
@@ -56,12 +57,13 @@ function Cart() {
           quantity: item.quantity || 1,
         })),
         total,
-        userId: "68f10b0e1cd3b39074630ad9",
+        userId: "68f10b0e1cd3b39074630ad9", // если есть авторизация, можно заменить
       };
 
       console.log("Отправка заказа:", orderData);
 
-      const response = await fetch("http://localhost:5000/api/orders/simple", {
+      // ✅ Используем Render URL вместо localhost
+      const response = await fetch(`${API_URL}/orders/simple`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

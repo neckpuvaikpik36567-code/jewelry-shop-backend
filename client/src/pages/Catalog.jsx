@@ -1,6 +1,7 @@
 import { useState } from "react";
-import "../style/catalog.css"
+import "../style/catalog.css";
 
+// Картинки колец
 import img1 from "../img/love.jpg";
 import img2 from "../img/classika.jpg";
 import img3 from "../img/vechnost.jpg";
@@ -12,6 +13,7 @@ import img8 from "../img/elegant.jpg";
 import img9 from "../img/lebed.jpg";
 import img10 from "../img/cap.jpg";
 
+// Картинки браслетов
 import img11 from "../img/starbraslet.jpg";
 import img12 from "../img/loonbraslet.jpg";
 import img13 from "../img/sunbraslet.jpg";
@@ -23,6 +25,7 @@ import img18 from "../img/brasletelegat.jpg";
 import img19 from "../img/brasletvechnost.jpg";
 import img20 from "../img/brasletclassika.jpg";
 
+// Картинки серёг
 import img21 from "../img/s1.jpg";
 import img22 from "../img/s5.jpg";
 import img23 from "../img/s8.jpg";
@@ -34,6 +37,7 @@ import img28 from "../img/s9.jpg";
 import img29 from "../img/s3.jpg";
 import img30 from "../img/s1.jpg";
 
+// Картинки ожерелий
 import img31 from "../img/ostar.jpg";
 import img32 from "../img/oloon.jpg";
 import img33 from "../img/osun.jpg";
@@ -99,7 +103,7 @@ function Catalog() {
     ],
   };
 
-  // 🔹 Добавление в корзину
+  // 🔹 Добавление товара в корзину
   const handleAddToCart = (item) => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
 
@@ -109,9 +113,8 @@ function Catalog() {
     }
 
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-    // проверка — если товар уже есть, увеличиваем количество
     const existingItem = cart.find((c) => c.id === item.id);
+
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
@@ -150,7 +153,6 @@ function Catalog() {
             >
               Добавить в корзину
             </button>
-            
           </div>
         ))}
       </div>
