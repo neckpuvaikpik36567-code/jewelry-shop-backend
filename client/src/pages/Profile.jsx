@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "../style/profile.css";
+import config from "../config";
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -18,10 +19,9 @@ function Profile() {
 
   const fetchUserOrders = async () => {
     try {
-      // Используем фиксированный userId, как в корзине
       const userId = "68f10b0e1cd3b39074630ad9";
       
-      const response = await fetch(`http://localhost:5000/api/orders/user/${userId}`);
+      const response = await fetch(`${config.apiUrl}/api/orders/user/${userId}`);
       
       if (response.ok) {
         const ordersData = await response.json();
@@ -138,7 +138,6 @@ function Profile() {
 
       <div className="profile-actions">
         <a href="/cart" className="btn btn-primary">Перейти в корзину</a>
-     
       </div>
     </div>
   );

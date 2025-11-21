@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../style/login.css";
+import config from "../config";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -10,7 +11,7 @@ function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${config.apiUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -24,10 +25,9 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Сохраняем токен или статус в localStorage
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("currentUser", email);
-        localStorage.setItem("token", data.token); // если используешь JWT
+        localStorage.setItem("token", data.token);
         
         alert("Вход выполнен успешно!");
         window.location.href = "/";

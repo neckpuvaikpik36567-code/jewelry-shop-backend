@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import config from '../config';
 
 function Checkout() {
   const [cart, setCart] = useState(null);
@@ -21,7 +22,7 @@ function Checkout() {
 
   const fetchCart = async () => {
     try {
-      const response = await fetch('/api/cart', {
+      const response = await fetch(`${config.apiUrl}/api/cart`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -35,7 +36,7 @@ function Checkout() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/checkout/orders', {
+      const response = await fetch(`${config.apiUrl}/api/checkout/orders`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -55,7 +56,7 @@ function Checkout() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/checkout/test-payment', {
+      const response = await fetch(`${config.apiUrl}/api/checkout/test-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,6 @@ function Checkout() {
         </div>
       ) : (
         <div className="checkout-content">
-          {/* Товары в корзине */}
           <div className="cart-items">
             <h3>Товары в заказе</h3>
             {cart.items.map(item => (
@@ -127,7 +127,6 @@ function Checkout() {
             </div>
           </div>
 
-          {/* Форма адреса доставки */}
           <div className="shipping-form">
             <h3>Адрес доставки</h3>
             <div className="form-group">
@@ -188,7 +187,6 @@ function Checkout() {
             />
           </div>
 
-          {/* Кнопка оплаты */}
           <div className="payment-section">
             <h3>Тестовая оплата</h3>
             <p>Это тестовый платеж. Заказ будет создан сразу без реальной оплаты.</p>

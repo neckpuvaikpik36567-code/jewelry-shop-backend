@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "../style/cart.css";
+import config from "../config";
 
 function Cart() {
   const [cart, setCart] = useState([]);
@@ -57,7 +58,7 @@ function Cart() {
 
       console.log("Отправка заказа:", orderData);
 
-      const response = await fetch("http://localhost:5000/api/orders/simple", {
+      const response = await fetch(`${config.apiUrl}/api/orders/simple`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -68,7 +69,6 @@ function Cart() {
       const result = await response.json();
 
       if (response.ok) {
-        // Сохраняем заказ в localStorage для профиля
         const currentUser = localStorage.getItem("currentUser");
         if (currentUser) {
           const existingOrders = JSON.parse(localStorage.getItem("orders")) || {};
@@ -96,7 +96,6 @@ function Cart() {
           localStorage.setItem("orders", JSON.stringify(existingOrders));
         }
 
-        // Очищаем корзину
         setCart([]);
         localStorage.removeItem("cart");
         setFullName("");

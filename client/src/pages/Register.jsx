@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import "../style/register.css"; // Добавьте эту строку
+import "../style/register.css";
+import config from "../config";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -22,7 +23,7 @@ const Register = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${config.apiUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -35,7 +36,6 @@ const Register = () => {
       const data = await response.json();
       console.log("✅ Успех:", data);
       alert("Регистрация прошла успешно!");
-      // После успешной регистрации переходим на страницу входа
       navigate("/login");
     } catch (error) {
       console.error("Ошибка:", error);
