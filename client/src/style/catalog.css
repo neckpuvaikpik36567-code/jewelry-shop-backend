@@ -1,7 +1,7 @@
 .catalog-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 30px;
+  padding: 20px;
   background: #fff8f3;
   font-family: "Georgia", serif;
 }
@@ -17,18 +17,20 @@
 .category-buttons {
   display: flex;
   justify-content: center;
-  gap: 15px;
-  margin-bottom: 30px;
+  gap: 10px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
 }
 
 .category-btn {
-  padding: 10px 20px;
+  padding: 10px 16px;
   border: 1px solid #d6bfa9;
   background: #fff;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   border-radius: 20px;
   transition: 0.3s;
+  min-width: 100px;
 }
 
 .category-btn:hover {
@@ -44,7 +46,7 @@
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 25px;
+  gap: 20px;
 }
 
 .product-card {
@@ -72,25 +74,99 @@
   font-size: 16px;
   font-weight: bold;
   margin: 10px 0;
+  line-height: 1.3;
 }
 
 .product-price {
   font-size: 15px;
   color: #666;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .add-to-cart {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   background: #b38e6a;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: 0.3s;
+  font-size: 14px;
 }
 
 .add-to-cart:hover {
   background: #8c6b4e;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .catalog-container {
+    padding: 15px;
+  }
+  
+  .catalog-title {
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+  
+  .category-buttons {
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .category-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 80px;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+  }
+  
+  .product-card {
+    padding: 12px;
+  }
+  
+  .product-img {
+    height: 150px;
+  }
+  
+  .product-name {
+    font-size: 14px;
+  }
+  
+  .product-price {
+    font-size: 13px;
+  }
+  
+  .add-to-cart {
+    padding: 10px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .catalog-container {
+    padding: 10px;
+  }
+  
+  .catalog-title {
+    font-size: 20px;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .product-card {
+    padding: 10px;
+  }
+  
+  .product-img {
+    height: 120px;
+  }
 }

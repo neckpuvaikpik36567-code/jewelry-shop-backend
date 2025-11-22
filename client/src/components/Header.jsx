@@ -17,7 +17,7 @@ function Header() {
       <div className="header-container">
         {/* Лого */}
         <div className="logo">
-          <Link to="/">✨ Jewelry</Link>
+          <Link to="/">Jewelry</Link>
         </div>
 
         {/* Навигация */}

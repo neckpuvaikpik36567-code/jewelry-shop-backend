@@ -4,11 +4,12 @@
   align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #f9e6d3, #fdfcfb);
+  padding: 20px;
 }
 
 .auth-card {
   background: white;
-  padding: 40px;
+  padding: 30px 25px;
   border-radius: 15px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   width: 100%;
@@ -35,6 +36,7 @@
   border-radius: 8px;
   outline: none;
   transition: border-color 0.3s;
+  font-size: 16px; /* Улучшает масштабирование на iOS */
 }
 
 .auth-card input:focus {
@@ -69,4 +71,30 @@
 
 .auth-card a:hover {
   text-decoration: underline;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 15px;
+    align-items: flex-start;
+    padding-top: 50px;
+  }
+  
+  .auth-card {
+    padding: 25px 20px;
+    margin: 0;
+  }
+  
+  .auth-card h2 {
+    font-size: 22px;
+  }
+  
+  .auth-card input {
+    padding: 14px; /* Увеличиваем для удобства касания */
+  }
+  
+  .auth-card .btn {
+    padding: 14px;
+  }
 }
