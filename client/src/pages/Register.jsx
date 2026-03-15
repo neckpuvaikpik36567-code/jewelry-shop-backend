@@ -1,17 +1,16 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import "../style/register.css";
-import config from "../config";
+// src/pages/Register.jsx
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import config from '../config';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
+    name: '',
+    email: '',
+    password: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,53 +18,50 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError(""); // Очищаем ошибку при изменении поля
+    setError('');
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError('');
 
-    // Валидация
     if (!formData.name || !formData.email || !formData.password) {
-      setError("Все поля обязательны для заполнения");
+      setError('Все поля обязательны');
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Пароль должен быть не менее 6 символов");
+      setError('Пароль должен быть не менее 6 символов');
       setLoading(false);
       return;
     }
 
     try {
-      console.log("📱 Отправка регистрации...", formData);
-      
       const response = await fetch(`${config.apiUrl}/api/auth/register`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-        },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      console.log("📊 Статус регистрации:", response.status);
-
       const data = await response.json();
-      console.log("📨 Ответ сервера:", data);
 
       if (response.ok && data.success) {
-        alert("🎉 Регистрация прошла успешно!");
-        navigate("/login");
+        // Автоматический вход после регистрации
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userId', data.user.id);
+        localStorage.setItem('currentUser', data.user.email);
+        localStorage.setItem('userName', data.user.name);
+
+        alert('Регистрация успешна! Вы вошли в аккаунт.');
+        navigate('/');
       } else {
-        // Показываем сообщение об ошибке от сервера
-        setError(data.message || "Ошибка регистрации");
+        setError(data.error || 'Ошибка регистрации');
       }
-    } catch (error) {
-      console.error("❌ Ошибка:", error);
-      setError("Ошибка подключения к серверу");
+    } catch (err) {
+      setError('Ошибка подключения к серверу');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -73,57 +69,57 @@ const Register = () => {
 
   return (
     <div className="register-container">
-      <form onSubmit={handleRegister} className="register-form">
-        <h1>Регистрация</h1>
-        
-        {error && (
-          <div className="error-message">
-            ❌ {error}
+      <div className="register-card">
+        <h2>Регистрация</h2>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <form onSubmit={handleRegister}>
+          <div className="form-group">
+            <label>Имя</label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Ваше имя"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
           </div>
-        )}
-        
-        <label>Имя:</label>
-        <input
-          type="text"
-          name="name"
-          placeholder="Ваше имя"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          disabled={loading}
-        />
 
-        <label>Email:</label>
-        <input
-          type="email"
-          name="email"
-          placeholder="Ваш email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          disabled={loading}
-        />
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Ваш email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-        <label>Пароль:</label>
-        <input
-          type="password"
-          name="password"
-          placeholder="Ваш пароль (минимум 6 символов)"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          disabled={loading}
-          minLength="6"
-        />
+          <div className="form-group">
+            <label>Пароль</label>
+            <input
+              type="password"
+              name="password"
+              placeholder="Минимум 6 символов"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-        <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? "⏳ Регистрация..." : "Зарегистрироваться"}
-        </button>
+          <button type="submit" disabled={loading} className="btn-register">
+            {loading ? 'Регистрация...' : 'Зарегистрироваться'}
+          </button>
+        </form>
 
-        <div className="auth-link">
-          <p>Уже есть аккаунт? <Link to="/login">Войти</Link></p>
-        </div>
-      </form>
+        <p className="auth-link">
+          Уже есть аккаунт? <Link to="/login">Войти</Link>
+        </p>
+      </div>
     </div>
   );
 };

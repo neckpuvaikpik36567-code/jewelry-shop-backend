@@ -1,52 +1,69 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User.js';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
 // Регистрация
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { email, password, name, phone, address } = req.body;
 
-    // Проверяем, существует ли пользователь
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Пользователь с таким email уже существует' });
+    if (!email || !password || !name) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, пароль и имя обязательны'
+      });
     }
 
-    // Хешируем пароль
+    const db = mongoose.connection.db;
+    
+    const existingUser = await db.collection('users').findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Пользователь с таким email уже существует'
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Создаем пользователя
-    const user = new User({
-      name,
+    const user = {
       email,
-      password: hashedPassword
-    });
+      password: hashedPassword,
+      name,
+      phone: phone || '',
+      address: address || '',
+      createdAt: new Date(),
+      role: 'user'
+    };
 
-    await user.save();
-
-    // Создаем JWT токен
+    const result = await db.collection('users').insertOne(user);
+    
     const token = jwt.sign(
-      { id: user._id }, 
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '30d' }
+      { userId: result.insertedId.toString(), email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'jwt-secret',
+      { expiresIn: '7d' }
     );
 
     res.status(201).json({
       success: true,
-      message: 'Пользователь успешно зарегистрирован',
+      message: 'Регистрация успешна',
       token,
+      userId: result.insertedId,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
+        _id: result.insertedId,
+        email: user.email,
+        name: user.name
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Ошибка регистрации:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
   }
 });
 
@@ -55,59 +72,54 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Находим пользователя
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Пользователь не найден' });
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email и пароль обязательны'
+      });
     }
 
-    // Проверяем пароль
+    const db = mongoose.connection.db;
+    
+    const user = await db.collection('users').findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Неверный email или пароль'
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Неверный пароль' });
+      return res.status(401).json({
+        success: false,
+        message: 'Неверный email или пароль'
+      });
     }
 
-    // Создаем JWT токен
     const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '30d' }
+      { userId: user._id.toString(), email: user.email, role: user.role || 'user' },
+      process.env.JWT_SECRET || 'jwt-secret',
+      { expiresIn: '7d' }
     );
 
     res.json({
       success: true,
-      message: 'Вход выполнен успешно',
+      message: 'Вход выполнен',
       token,
+      userId: user._id,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
+        _id: user._id,
+        email: user.email,
+        name: user.name
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Получить текущего пользователя
-router.get('/me', async (req, res) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Нет токена' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const user = await User.findById(decoded.id).select('-password');
-    
-    if (!user) {
-      return res.status(401).json({ message: 'Пользователь не найден' });
-    }
-
-    res.json(user);
-  } catch (error) {
-    res.status(401).json({ message: 'Токен не действителен' });
+    console.error('Ошибка входа:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
   }
 });
 

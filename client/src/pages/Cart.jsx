@@ -1,226 +1,118 @@
-import { useEffect, useState } from "react";
-import "../style/cart.css";
-import config from "../config";
+// client/src/pages/Cart.jsx
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import config from '../config'; // { apiUrl: 'http://localhost:5000' }
 
 function Cart() {
-  const [cart, setCart] = useState([]);
-  const [fullName, setFullName] = useState("");
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [cart, setCart] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    setCart(savedCart);
-  }, []);
+    const userId = localStorage.getItem('userId');
 
-  const total = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
-
-  const updateQuantity = (index, newQuantity) => {
-    if (newQuantity < 1) return;
-    
-    const updatedCart = [...cart];
-    updatedCart[index].quantity = newQuantity;
-    setCart(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
-  };
-
-  const removeItem = (index) => {
-    const updatedCart = cart.filter((_, i) => i !== index);
-    setCart(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
-  };
-
-  const handleCheckout = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (!fullName || !address || !phone || cart.length === 0) {
-      alert("Заполните все поля и добавьте товары в корзину!");
-      setLoading(false);
+    if (!userId) {
+      alert('Для просмотра корзины нужно войти в аккаунт');
+      navigate('/login');
       return;
     }
 
-    try {
-      console.log("📱 Создание заказа...");
-      
-      const orderData = {
-        fullName,
-        address,
-        phone,
-        items: cart.map((item) => ({ 
-          id: item.id, 
-          name: item.name, 
-          price: item.price, 
-          quantity: item.quantity || 1 
-        })),
-        total,
-        userId: localStorage.getItem("userId") || "68f10b0e1cd3b39074630ad9",
-      };
+    fetchCart(userId);
+  }, []);
 
-      const response = await fetch(`${config.apiUrl}/api/orders/simple`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
+  const fetchCart = async (userId) => {
+    try {
+      const res = await fetch(`${config.apiUrl}/api/cart`, {
+        headers: {
+          'x-user-id': userId,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderData),
       });
 
-      console.log("📊 Статус заказа:", response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
 
-      const result = await response.json();
-
-      if (result.success) {
-        const currentUser = localStorage.getItem("currentUser");
-        if (currentUser) {
-          const existingOrders = JSON.parse(localStorage.getItem("orders")) || {};
-          const userOrders = existingOrders[currentUser] || [];
-          
-          userOrders.unshift({
-            id: result.order._id,
-            orderNumber: result.order.orderNumber,
-            date: new Date().toLocaleDateString('ru-RU'),
-            fullName,
-            address,
-            phone,
-            total,
-            items: cart.map(item => ({
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity || 1,
-              image: item.image
-            })),
-            status: 'pending',
-            paymentStatus: 'paid'
-          });
-          
-          existingOrders[currentUser] = userOrders;
-          localStorage.setItem("orders", JSON.stringify(existingOrders));
-        }
-
-        setCart([]);
-        localStorage.removeItem("cart");
-        setFullName("");
-        setAddress("");
-        setPhone("");
-        
-        alert(`🎉 Заказ успешно оформлен! Номер заказа: ${result.order?.orderNumber}`);
-      } else {
-        throw new Error(result.message || "Неизвестная ошибка");
-      }
+      const data = await res.json();
+      setCart(data.data || { items: [] });
     } catch (err) {
-      console.error("❌ Ошибка подключения:", err);
-      
-      if (err.message.includes("Failed to fetch")) {
-        alert("📡 Не удалось подключиться к серверу. Проверьте интернет-соединение.");
-      } else {
-        alert("❌ Ошибка оформления заказа: " + err.message);
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (cart.length === 0) {
+  const removeItem = async (productId) => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+
+    try {
+      await fetch(`${config.apiUrl}/api/cart/${productId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': userId },
+      });
+      fetchCart(userId); // перезагружаем корзину
+    } catch (err) {
+      alert('Не удалось удалить товар');
+    }
+  };
+
+  if (loading) return <div className="cart-loading">Загрузка корзины...</div>;
+  if (error) return <div className="cart-error">Ошибка: {error}</div>;
+
+  if (!cart || cart.items.length === 0) {
     return (
-      <div className="cart-container">
-        <h1 className="cart-title">🛒 Ваша корзина</h1>
-        <p className="empty-cart">Ваша корзина пуста</p>
-        <div className="go-shopping">
-          <a href="/catalog" className="btn btn-primary">Перейти к покупкам</a>
-        </div>
+      <div className="empty-cart">
+        <h2>Корзина пуста</h2>
+        <button onClick={() => navigate('/catalog')}>Перейти в каталог</button>
       </div>
     );
   }
 
+  let total = 0;
+  cart.items.forEach((item) => {
+    if (item.productId) {
+      total += item.productId.price * item.quantity;
+    }
+  });
+
   return (
-    <div className="cart-container">
-      <h1 className="cart-title">🛒 Ваша корзина</h1>
-      
+    <div className="cart-page">
+      <h1>Корзина</h1>
+
       <div className="cart-items">
-        {cart.map((item, index) => (
-          <div key={index} className="cart-item">
-            <img src={item.image || item.img} alt={item.name} className="cart-item-image" />
-            <div className="cart-item-info">
-              <h3>{item.name}</h3>
-              <p className="cart-item-price">${item.price}</p>
-              
-              <div className="quantity-controls">
-                <button 
-                  onClick={() => updateQuantity(index, (item.quantity || 1) - 1)}
-                  disabled={item.quantity <= 1}
-                >
-                  -
-                </button>
-                <span>{item.quantity || 1}</span>
-                <button 
-                  onClick={() => updateQuantity(index, (item.quantity || 1) + 1)}
-                >
-                  +
-                </button>
+        {cart.items.map((item) => {
+          const p = item.productId;
+          if (!p) return null;
+
+          return (
+            <div key={item._id} className="cart-item">
+              <img src={p.imageUrl} alt={p.name} className="item-img" />
+              <div className="item-info">
+                <h3>{p.name}</h3>
+                <p>{p.price} ₽ × {item.quantity}</p>
               </div>
-              
-              <p className="cart-item-total">
-                Итого: ${(item.price * (item.quantity || 1)).toFixed(2)}
-              </p>
-              
-              <button 
-                onClick={() => removeItem(index)}
-                className="remove-btn"
-              >
+              <div className="item-sum">
+                {(p.price * item.quantity).toFixed(0)} ₽
+              </div>
+              <button className="remove-btn" onClick={() => removeItem(p._id)}>
                 Удалить
               </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      
-      <div className="cart-total">
-        <h2>Общая сумма: ${total.toFixed(2)}</h2>
-      </div>
-      
-      <form onSubmit={handleCheckout} className="checkout-form">
-        <h3>Данные для доставки</h3>
-        
-        <input 
-          type="text" 
-          placeholder="ФИО" 
-          value={fullName} 
-          onChange={(e) => setFullName(e.target.value)} 
-          required 
-          disabled={loading}
-        />
-        
-        <input 
-          type="text" 
-          placeholder="Адрес доставки" 
-          value={address} 
-          onChange={(e) => setAddress(e.target.value)} 
-          required 
-          disabled={loading}
-        />
-        
-        <input 
-          type="tel" 
-          placeholder="Телефон" 
-          value={phone} 
-          onChange={(e) => setPhone(e.target.value)} 
-          required 
-          disabled={loading}
-        />
-        
-        <button 
-          type="submit" 
-          className="checkout-btn"
-          disabled={loading}
-        >
-          {loading ? "⏳ Оформление..." : `💳 Оплатить $${total.toFixed(2)}`}
+
+      <div className="cart-footer">
+        <div className="total-sum">
+          Итого: <strong>{total.toFixed(0)} ₽</strong>
+        </div>
+        <button className="checkout-btn" onClick={() => navigate('/checkout')}>
+          Оформить заказ
         </button>
-      </form>
+      </div>
     </div>
   );
 }
