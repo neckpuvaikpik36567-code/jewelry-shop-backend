@@ -23,23 +23,29 @@ const cartSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    unique: true  // один-к-одному
+    unique: true,
+    sparse: true  
   },
   items: [cartItemSchema]
 }, {
   timestamps: true
 });
 
-// Виртуальное поле для подсчета общей суммы
-cartSchema.virtual('totalAmount').get(async function() {
-  await this.populate('items.product');
-  let total = 0;
-  this.items.forEach(item => {
-    if (item.product) {
-      total += item.product.price * item.quantity;
-    }
-  });
-  return total;
+
+cartSchema.virtual('totalAmount').get(function() {
+ 
+  return this.items.reduce((total, item) => {
+   
+    return total;
+  }, 0);
 });
+
+
+cartSchema.methods.calculateTotal = async function() {
+  await this.populate('items.product');
+  return this.items.reduce((total, item) => {
+    return total + (item.product.price * item.quantity);
+  }, 0);
+};
 
 module.exports = mongoose.model('Cart', cartSchema);

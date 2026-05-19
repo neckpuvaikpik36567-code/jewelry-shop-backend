@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://jewelry-shop-backend-s0tc.onrender.com/api/products',
+        target: 'https://jewelry-shop-backend-s0tc.onrender.com',
         changeOrigin: true,
       }
     }
