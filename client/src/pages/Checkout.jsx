@@ -1,92 +1,182 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import config from '../config';
 
 function Checkout() {
   const [cart, setCart] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [shippingAddress, setShippingAddress] = useState({
     firstName: '',
-    address: ''
+    address: '',
+    phone: ''
   });
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+
+    if (!isLoggedIn || !userId) {
+      alert("Для оформления заказа нужно войти в аккаунт!");
+      navigate('/login');
+      return;
+    }
+
     fetchCart();
   }, []);
 
   const fetchCart = async () => {
-    const res = await fetch(`${config.apiUrl}/api/cart`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+    const userId = localStorage.getItem("userId");
+    
+    try {
+      const response = await fetch(`${config.apiUrl}/api/cart`, {
+        headers: {
+          'x-user-id': userId
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
-    });
-    const data = await res.json();
-    setCart(data);
+
+      const data = await response.json();
+      console.log('Корзина:', data);
+      setCart(data.data || { items: [] });
+    } catch (err) {
+      console.error('Ошибка загрузки корзины:', err);
+      setError('Не удалось загрузить корзину');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleYooKassaPayment = async () => {
-    if (!shippingAddress.firstName || !shippingAddress.address) {
-      alert('Заполните адрес');
+  const handleOrderSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!shippingAddress.firstName || !shippingAddress.address || !shippingAddress.phone) {
+      alert('Заполните все поля');
       return;
     }
 
+    const userId = localStorage.getItem("userId");
     setLoading(true);
 
     try {
-      const res = await fetch(`${config.apiUrl}/api/yookassa/pay`, {
+      const response = await fetch(`${config.apiUrl}/api/orders`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-user-id': userId
         },
         body: JSON.stringify({
-          amount: cart.totalAmount
+          address: shippingAddress.address,
+          phone: shippingAddress.phone,
+          fullName: shippingAddress.firstName
         })
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (data.confirmationUrl) {
-        window.location.href = data.confirmationUrl;
+      if (response.ok && data.success) {
+        alert('Заказ успешно оформлен!');
+        navigate('/profile');
       } else {
-        alert('Ошибка платежа');
+        alert('Ошибка: ' + (data.error || 'Не удалось оформить заказ'));
       }
-    } catch (e) {
-      alert('Ошибка: ' + e.message);
+    } catch (err) {
+      console.error('Ошибка:', err);
+      alert('Ошибка подключения к серверу');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
-  if (!cart) return <div>Загрузка...</div>;
+  if (loading) {
+    return <div className="checkout-loading">Загрузка...</div>;
+  }
+
+  if (error) {
+    return <div className="checkout-error">{error}</div>;
+  }
+
+  if (!cart || (cart.items && cart.items.length === 0)) {
+    return (
+      <div className="empty-cart">
+        <h2>Корзина пуста</h2>
+        <button onClick={() => navigate('/catalog')}>Перейти в каталог</button>
+      </div>
+    );
+  }
+
+  let total = 0;
+  if (cart.items) {
+    cart.items.forEach((item) => {
+      if (item.productId) {
+        const product = item.productId;
+        total += product.price * item.quantity;
+      }
+    });
+  }
 
   return (
-    <div className="checkout">
+    <div className="checkout-container">
       <h2>Оформление заказа</h2>
 
-      {cart.items.map(item => (
-        <div key={item._id}>
-          {item.product.name} — {item.quantity} × {item.price} ₽
+      <div className="checkout-items">
+        <h3>Ваши товары:</h3>
+        {cart.items.map((item, index) => {
+          const product = item.productId;
+          if (!product) return null;
+          return (
+            <div key={index} className="checkout-item">
+              <span>{product.name}</span>
+              <span>{item.quantity} × {product.price} ₽</span>
+              <span>{product.price * item.quantity} ₽</span>
+            </div>
+          );
+        })}
+        <div className="checkout-total">
+          <strong>Итого: {total} ₽</strong>
         </div>
-      ))}
+      </div>
 
-      <h3>Итого: {cart.totalAmount} ₽</h3>
+      <form onSubmit={handleOrderSubmit} className="checkout-form">
+        <h3>Данные для доставки:</h3>
+        
+        <div className="form-group">
+          <label>Имя и фамилия:</label>
+          <input
+            type="text"
+            value={shippingAddress.firstName}
+            onChange={e => setShippingAddress({ ...shippingAddress, firstName: e.target.value })}
+            required
+          />
+        </div>
 
-      <input
-        type="text"
-        placeholder="Имя"
-        value={shippingAddress.firstName}
-        onChange={e => setShippingAddress({ ...shippingAddress, firstName: e.target.value })}
-      />
+        <div className="form-group">
+          <label>Телефон:</label>
+          <input
+            type="tel"
+            value={shippingAddress.phone}
+            onChange={e => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+            required
+          />
+        </div>
 
-      <input
-        type="text"
-        placeholder="Адрес"
-        value={shippingAddress.address}
-        onChange={e => setShippingAddress({ ...shippingAddress, address: e.target.value })}
-      />
+        <div className="form-group">
+          <label>Адрес доставки:</label>
+          <textarea
+            value={shippingAddress.address}
+            onChange={e => setShippingAddress({ ...shippingAddress, address: e.target.value })}
+            required
+          />
+        </div>
 
-      <button onClick={handleYooKassaPayment} disabled={loading}>
-        {loading ? 'Переход к оплате...' : 'Оплатить через ЮKassa'}
-      </button>
+        <button type="submit" disabled={loading} className="submit-order-btn">
+          {loading ? 'Оформление...' : 'Подтвердить заказ'}
+        </button>
+      </form>
     </div>
   );
 }

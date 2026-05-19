@@ -1,7 +1,7 @@
-// src/pages/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import config from '../config';
+import '../style/register.css';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -48,7 +48,6 @@ const Register = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Автоматический вход после регистрации
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userId', data.user.id);
         localStorage.setItem('currentUser', data.user.email);

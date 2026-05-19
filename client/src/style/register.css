@@ -5,9 +5,10 @@
   align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+  padding: 20px;
 }
 
-.register-form {
+.register-card {
   background: white;
   padding: 50px;
   border-radius: 15px;
@@ -17,7 +18,7 @@
   border: 1px solid #e0e0e0;
 }
 
-.register-form h1 {
+.register-card h2 {
   margin-bottom: 25px;
   font-size: 28px;
   font-weight: bold;
@@ -25,7 +26,11 @@
   text-align: center;
 }
 
-.register-form label {
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
@@ -33,7 +38,7 @@
   display: block;
 }
 
-.register-form input {
+.form-group input {
   padding: 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -42,22 +47,21 @@
   font-size: 16px;
   width: 100%;
   box-sizing: border-box;
-  margin-bottom: 20px;
   background: #fafafa;
 }
 
-.register-form input:focus {
+.form-group input:focus {
   border-color: #b38e6a;
   background: white;
   box-shadow: 0 0 0 3px rgba(179, 142, 106, 0.1);
 }
 
-.register-form input::placeholder {
+.form-group input::placeholder {
   color: #888;
   font-size: 14px;
 }
 
-.btn-primary {
+.btn-register {
   background: #b38e6a;
   color: white;
   border: none;
@@ -72,10 +76,16 @@
   box-shadow: 0 2px 10px rgba(179, 142, 106, 0.3);
 }
 
-.btn-primary:hover {
+.btn-register:hover:not(:disabled) {
   background: #8a6c50;
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(179, 142, 106, 0.4);
+}
+
+.btn-register:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .auth-link {
@@ -83,12 +93,6 @@
   margin-top: 25px;
   padding-top: 20px;
   border-top: 1px solid #e8e8e8;
-}
-
-.auth-link p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
 }
 
 .auth-link a {
@@ -102,6 +106,7 @@
   color: #8a6c50;
   text-decoration: underline;
 }
+
 .error-message {
   background-color: #ffebee;
   border: 1px solid #f44336;
@@ -112,15 +117,14 @@
   text-align: center;
   font-weight: 500;
 }
+
 /* Адаптивность */
 @media (max-width: 480px) {
   .register-container {
     padding: 20px;
-    background: #f8f8f8;
   }
   
-  .register-form {
+  .register-card {
     padding: 30px 25px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
 }

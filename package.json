@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@a2seven/yoo-checkout": "^1.1.4"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   }
 }

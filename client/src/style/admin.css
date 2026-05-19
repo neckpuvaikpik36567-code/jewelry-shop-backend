@@ -1,0 +1,247 @@
+/* Стили для админ-панели - обновленная версия */
+
+/* Страница входа */
+.admin-login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #fff8f3;
+}
+
+.login-card {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  width: 350px;
+  border: 1px solid #e8ddd0;
+}
+
+.login-card h2 {
+  margin-bottom: 25px;
+  text-align: center;
+  color: #333;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.login-card h2 span {
+  color: #b38e6a;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #e0d5c8;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s;
+  box-sizing: border-box;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: #b38e6a;
+  box-shadow: 0 0 0 2px rgba(179, 142, 106, 0.1);
+}
+
+.login-card button {
+  width: 100%;
+  padding: 12px;
+  background: #b38e6a;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 15px;
+  transition: all 0.3s;
+}
+
+.login-card button:hover {
+  background: #8a6c50;
+  transform: translateY(-1px);
+}
+
+.hint {
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #f0e8e0;
+}
+
+/* Дашборд администратора */
+.admin-dashboard {
+  padding: 20px;
+  background: #fff8f3;
+  min-height: 100vh;
+}
+
+.admin-dashboard header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 15px 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border: 1px solid #e8ddd0;
+}
+
+.admin-dashboard header h1 {
+  color: #333;
+  font-size: 22px;
+}
+
+.admin-dashboard header h1 span {
+  color: #b38e6a;
+}
+
+.logout-btn {
+  padding: 8px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Вкладки */
+.admin-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.admin-tabs button {
+  padding: 10px 24px;
+  background: white;
+  border: 1px solid #e0d5c8;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.3s;
+  color: #555;
+}
+
+.admin-tabs button:hover {
+  border-color: #b38e6a;
+  color: #b38e6a;
+}
+
+.admin-tabs button.active {
+  background: #b38e6a;
+  color: white;
+  border-color: #b38e6a;
+}
+
+/* Таблица */
+.admin-table {
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border: 1px solid #e8ddd0;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #f0e8e0;
+}
+
+.admin-table th {
+  background: #faf7f2;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-table tr:hover {
+  background: #fefbf8;
+}
+
+.btn-delete {
+  padding: 6px 14px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.btn-delete:hover {
+  background: #c82333;
+  transform: scale(1.02);
+}
+
+.warning-badge {
+  background: #fff3e0;
+  color: #b38e6a;
+  padding: 8px 15px;
+  border-radius: 25px;
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 13px;
+  border: 1px solid #f0e0d0;
+}
+
+.loading, .error-message {
+  text-align: center;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  margin-top: 20px;
+  border: 1px solid #e8ddd0;
+}
+
+.error-message {
+  color: #dc3545;
+  background: #fff5f5;
+  border-color: #ffe0e0;
+}
+
+/* Адаптивность для админки */
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 15px;
+  }
+  
+  .admin-dashboard header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .admin-tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .login-card {
+    width: 90%;
+    padding: 30px 20px;
+    margin: 20px;
+  }
+}
