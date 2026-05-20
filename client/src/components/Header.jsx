@@ -32,6 +32,7 @@ function Header() {
             <>
               <Link to="/login" className="btn">Войти</Link>
               <Link to="/register" className="btn">Регистрация</Link>
+              <Link to="/admin" className="btn">Админ-панель</Link>
             </>
           )}
 
