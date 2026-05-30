@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+
 
 const app = express();
 
@@ -63,7 +65,7 @@ async function createYooKassaPayment(amount, orderId, description, returnUrl, us
 }
 
 // ПОДКЛЮЧЕНИЕ К MONGODB
-const MONGODB_URI = 'mongodb://127.0.0.1:27017/jewelry_shop';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,

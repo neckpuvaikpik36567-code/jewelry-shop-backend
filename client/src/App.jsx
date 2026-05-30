@@ -11,7 +11,7 @@ import Profile from "./pages/Profile";
 import Contact from "./pages/Contact";
 import Footer from "./components/Footer";
 import Admin from "./pages/Admin";
-
+import TestPayment from './pages/TestPayment';
 
 function App() {
   return (
@@ -27,7 +27,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin" element={<Admin />} />
-       
+       <Route path="/test-payment" element={<TestPayment />} />
       </Routes>
       <Footer />
     </Router>

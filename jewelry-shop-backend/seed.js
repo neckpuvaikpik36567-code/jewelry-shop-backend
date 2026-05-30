@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-
-const MONGODB_URI = 'mongodb://127.0.0.1:27017/jewelry_shop';
-
+ 
+const MONGODB_URI = 'mongodb+srv://neckpuvaikpik36567_db_user:O60Xt04fLNHMsr8k@cluster0.fijeusu.mongodb.net/jewelry';
+ 
 // Схема товара
 const ProductSchema = new mongoose.Schema({
   name: String,
@@ -11,9 +11,9 @@ const ProductSchema = new mongoose.Schema({
   stock: { type: Number, default: 0 },
   isAvailable: { type: Boolean, default: true }
 });
-
+ 
 const Product = mongoose.model('Product', ProductSchema);
-
+ 
 // Список товаров для добавления
 const products = [
   // Кольца (rings)
@@ -89,5 +89,5 @@ async function seedDatabase() {
     process.exit(1);
   }
 }
-
+ 
 seedDatabase();

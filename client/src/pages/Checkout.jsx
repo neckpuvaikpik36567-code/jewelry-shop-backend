@@ -77,7 +77,7 @@ function Checkout() {
     const total = calculateTotal();
 
     try {
-      // Создаем заказ
+      // 1. Создаем заказ
       const orderResponse = await fetch(`${config.apiUrl}/api/orders`, {
         method: 'POST',
         headers: {
@@ -97,7 +97,7 @@ function Checkout() {
         throw new Error(orderData.error || 'Не удалось создать заказ');
       }
 
-      // Создаем платеж в YooKassa (используем config.apiUrl вместо localhost)
+      // 2. Создаем платеж в YooKassa
       const paymentResponse = await fetch(`${config.apiUrl}/api/create-payment`, {
         method: 'POST',
         headers: {
