@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const app = express();
 
@@ -8,7 +9,60 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ПОДКЛЮЧЕНИЕ К MONGODB (БЕЗ LOCALHOST - РАБОТАЕТ ВЕЗДЕ)
+// ========== НАСТРОЙКИ YOOKASSA ==========
+const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || 'ваш_shop_id';
+const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || 'test_ваш_секретный_ключ';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// Функция для создания базовой аутентификации
+const getBasicAuthHeader = () => {
+    const authString = `${YOOKASSA_SHOP_ID}:${YOOKASSA_SECRET_KEY}`;
+    const encodedAuth = Buffer.from(authString).toString('base64');
+    return `Basic ${encodedAuth}`;
+};
+
+// Функция создания платежа через YooKassa API
+async function createYooKassaPayment(amount, orderId, description, returnUrl, userId) {
+    const idempotenceKey = crypto.randomUUID();
+    
+    const paymentData = {
+        amount: {
+            value: amount.toString(),
+            currency: 'RUB'
+        },
+        payment_method_data: {
+            type: 'bank_card'
+        },
+        confirmation: {
+            type: 'redirect',
+            return_url: returnUrl || `${FRONTEND_URL}/profile`
+        },
+        description: description || `Заказ #${orderId} в Jewelry Shop`,
+        metadata: {
+            orderId: orderId,
+            userId: userId
+        }
+    };
+    
+    const response = await fetch('https://api.yookassa.ru/v3/payments', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Idempotence-Key': idempotenceKey,
+            'Authorization': getBasicAuthHeader()
+        },
+        body: JSON.stringify(paymentData)
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.description || 'Ошибка создания платежа');
+    }
+    
+    return await response.json();
+}
+
+// ПОДКЛЮЧЕНИЕ К MONGODB
 const MONGODB_URI = 'mongodb://127.0.0.1:27017/jewelry_shop';
 
 mongoose.connect(MONGODB_URI, {
@@ -63,8 +117,11 @@ const OrderSchema = new mongoose.Schema({
   items: [OrderItemSchema],
   total: Number,
   status: { type: String, default: 'pending' },
+  paymentStatus: { type: String, default: 'pending' },
+  paymentId: String,
   address: String,
-  phone: String
+  phone: String,
+  fullName: String
 }, { timestamps: true });
 
 // Модели
@@ -93,7 +150,6 @@ app.post('/api/auth/register', async (req, res) => {
     const user = new User({ name, email, password });
     await user.save();
     
-    // Создаем корзину
     const cart = new Cart({ userId: user._id, items: [] });
     await cart.save();
     
@@ -134,26 +190,7 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// ➕ ДОБАВИТЬ НОВЫЙ ТОВАР (с защитой от дублирования)
-app.post('/api/products', async (req, res) => {
-  try {
-    const { name, category } = req.body;
-    
-    // Проверяем, есть ли уже такой товар
-    const existing = await Product.findOne({ name, category });
-    if (existing) {
-      return res.status(409).json({ error: 'Товар уже существует' });
-    }
-    
-    const product = new Product(req.body);
-    await product.save();
-    console.log('✅ Добавлен товар:', product.name);
-    res.status(201).json(product);
-  } catch (err) {
-    console.error('❌ Ошибка добавления:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
+
 // ПОЛУЧИТЬ КОРЗИНУ
 app.get('/api/cart', async (req, res) => {
   try {
@@ -174,51 +211,36 @@ app.get('/api/cart', async (req, res) => {
   }
 });
 
-// ДОБАВИТЬ В КОРЗИНУ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// ДОБАВИТЬ В КОРЗИНУ
 app.post('/api/cart/add', async (req, res) => {
   try {
     const userId = req.headers['x-user-id'];
     const { productId, quantity } = req.body;
     
-    console.log('=== ДОБАВЛЕНИЕ В КОРЗИНУ ===');
-    console.log('userId:', userId);
-    console.log('productId:', productId);
-    console.log('quantity:', quantity);
-    
-    // Проверяем, существует ли товар
     if (!productId) {
       return res.status(400).json({ error: 'productId не указан' });
     }
     
     const product = await Product.findById(productId);
     if (!product) {
-      console.log('❌ Товар не найден:', productId);
       return res.status(404).json({ error: 'Товар не найден' });
     }
     
-    console.log('✅ Товар найден:', product.name);
-    
-    // Ищем корзину пользователя
     let cart = await Cart.findOne({ userId });
     if (!cart) {
-      console.log('🆕 Создаем новую корзину для пользователя:', userId);
       cart = new Cart({ userId, items: [] });
     }
     
-    // Проверяем, есть ли уже такой товар в корзине
     const existingItem = cart.items.find(item => item.productId && item.productId.toString() === productId);
     if (existingItem) {
       existingItem.quantity += quantity;
-      console.log('📦 Обновляем количество:', existingItem.quantity);
     } else {
       cart.items.push({ productId, quantity });
-      console.log('➕ Добавляем новый товар:', product.name);
     }
     
     await cart.save();
     await cart.populate('items.productId');
     
-    console.log('✅ Товар добавлен в корзину');
     res.json({ success: true, data: cart });
   } catch (err) {
     console.error('❌ Ошибка добавления в корзину:', err);
@@ -246,11 +268,73 @@ app.delete('/api/cart/:productId', async (req, res) => {
   }
 });
 
-// СОЗДАТЬ ЗАКАЗ
+// ========== YOOKASSA: СОЗДАНИЕ ПЛАТЕЖА ==========
+app.post('/api/create-payment', async (req, res) => {
+  const { orderId, amount, description, returnUrl } = req.body;
+  const userId = req.headers['x-user-id'];
+
+  console.log('💰 Создание платежа:', { orderId, amount, userId });
+
+  try {
+    const payment = await createYooKassaPayment(
+      amount, 
+      orderId, 
+      description, 
+      returnUrl,
+      userId
+    );
+    
+    await Order.findByIdAndUpdate(orderId, { 
+      paymentId: payment.id,
+      paymentStatus: 'pending'
+    });
+
+    console.log('✅ Платеж создан:', payment.id);
+    
+    res.json({
+      success: true,
+      confirmationUrl: payment.confirmation.confirmation_url,
+      paymentId: payment.id
+    });
+  } catch (error) {
+    console.error('❌ Ошибка создания платежа:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ========== YOOKASSA: WEBHOOK ==========
+app.post('/api/yookassa-webhook', async (req, res) => {
+  const event = req.body;
+  
+  console.log('📨 Получен webhook:', event);
+  
+  try {
+    if (event.object && event.object.status === 'succeeded') {
+      const { orderId } = event.object.metadata;
+      
+      await Order.findByIdAndUpdate(orderId, { 
+        paymentStatus: 'paid',
+        status: 'paid'
+      });
+      
+      console.log(`✅ Заказ ${orderId} успешно оплачен!`);
+    }
+    
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('❌ Ошибка обработки webhook:', error);
+    res.status(500).send('Error');
+  }
+});
+
+// СОЗДАНИЕ ЗАКАЗА
 app.post('/api/orders', async (req, res) => {
   try {
     const userId = req.headers['x-user-id'];
-    const { address, phone } = req.body;
+    const { address, phone, fullName } = req.body;
     
     const cart = await Cart.findOne({ userId }).populate('items.productId');
     if (!cart || cart.items.length === 0) {
@@ -279,17 +363,27 @@ app.post('/api/orders', async (req, res) => {
       items,
       total,
       address,
-      phone
+      phone,
+      fullName: fullName || '',
+      paymentStatus: 'pending',
+      status: 'pending'
     });
     
     await order.save();
     
-    // Очищаем корзину
     cart.items = [];
     await cart.save();
     
-    res.json({ success: true, order });
+    res.json({ 
+      success: true, 
+      order: {
+        id: order._id,
+        orderNumber: order.orderNumber,
+        total: order.total
+      }
+    });
   } catch (err) {
+    console.error('❌ Ошибка создания заказа:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -307,7 +401,6 @@ app.get('/api/orders/user/:userId', async (req, res) => {
 // ========== АДМИН МАРШРУТЫ ==========
 const ADMIN_KEY = 'super-secret-admin-key-2026';
 
-// ➕ АДМИН: ДОБАВИТЬ НОВЫЙ ТОВАР
 app.post('/api/admin/products', async (req, res) => {
   const key = req.headers['x-admin-key'];
   if (key !== ADMIN_KEY) {
@@ -335,7 +428,6 @@ app.post('/api/admin/products', async (req, res) => {
   }
 });
 
-// ✏️ АДМИН: ОБНОВИТЬ ТОВАР
 app.put('/api/admin/products/:id', async (req, res) => {
   const key = req.headers['x-admin-key'];
   if (key !== ADMIN_KEY) {
@@ -357,7 +449,6 @@ app.put('/api/admin/products/:id', async (req, res) => {
   }
 });
 
-// 🗑️ АДМИН: УДАЛИТЬ ТОВАР
 app.delete('/api/admin/products/:id', async (req, res) => {
   const key = req.headers['x-admin-key'];
   if (key !== ADMIN_KEY) {
@@ -376,21 +467,12 @@ app.delete('/api/admin/products/:id', async (req, res) => {
   }
 });
 
-// Остальные админ-маршруты (уже есть)
 app.get('/api/admin/users', async (req, res) => {
   const key = req.headers['x-admin-key'];
   if (key !== ADMIN_KEY) return res.status(403).json({ error: 'Доступ запрещен' });
   
   const users = await User.find().select('-password');
   res.json(users);
-});
-
-app.get('/api/admin/products', async (req, res) => {
-  const key = req.headers['x-admin-key'];
-  if (key !== ADMIN_KEY) return res.status(403).json({ error: 'Доступ запрещен' });
-  
-  const products = await Product.find();
-  res.json(products);
 });
 
 app.get('/api/admin/orders', async (req, res) => {
@@ -416,5 +498,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 СЕРВЕР ЗАПУЩЕН!`);
   console.log(`📍 Порт: ${PORT}`);
   console.log(`📍 Адрес: http://localhost:${PORT}`);
-  console.log(`✅ MongoDB: ${mongoose.connection.readyState === 1 ? 'подключена' : 'не подключена'}\n`);
+  console.log(`✅ MongoDB: ${mongoose.connection.readyState === 1 ? 'подключена' : 'не подключена'}`);
+  console.log(`💳 YooKassa: ${YOOKASSA_SHOP_ID !== 'ваш_shop_id' ? 'настроена' : 'не настроена'}\n`);
 });

@@ -1,8 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 .header {
   background: linear-gradient(135deg, #fff8f3 0%, #f9e6d3 100%);
   border-bottom: 2px solid #e5d1c3;
   padding: 15px 0;
-  font-family: "Georgia", serif;
+  font-family: "Montserrat", sans-serif;
   position: relative;
   box-shadow: 0 2px 20px rgba(179, 142, 106, 0.1);
 }
@@ -34,7 +35,7 @@
 
 .logo a {
   font-size: 24px;
-  font-weight: bold;
+  font-weight: 700;
   color: #8a6c50;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -46,11 +47,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  font-family: "Montserrat", sans-serif;
+  letter-spacing: 0.5px;
 }
 
 .logo a::before {
   content: '✦';
-  font-size: 20px;
+  font-size: 18px;
   color: #b38e6a;
 }
 
@@ -64,24 +67,21 @@
 .nav-links {
   display: flex;
   gap: 25px;
-  flex-wrap: wrap;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 10px 20px;
-  border-radius: 25px;
-  border: 1px solid #e5d1c3;
-  backdrop-filter: blur(10px);
+  align-items: center;
 }
 
 .nav-links a {
   text-decoration: none;
   color: #8a6c50;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
   transition: all 0.3s ease;
   white-space: nowrap;
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: 12px;
   position: relative;
+  letter-spacing: 0.3px;
 }
 
 .nav-links a::before {
@@ -112,7 +112,7 @@
   flex-wrap: wrap;
   background: rgba(255, 255, 255, 0.8);
   padding: 8px 15px;
-  border-radius: 25px;
+  border-radius: 12px;
   border: 1px solid #e5d1c3;
   backdrop-filter: blur(10px);
 }
@@ -125,6 +125,7 @@
   border-radius: 25px;
   font-size: 14px;
   font-weight: 600;
+  font-family: "Montserrat", sans-serif;
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -132,6 +133,11 @@
   box-shadow: 0 4px 15px rgba(179, 142, 106, 0.3);
   position: relative;
   overflow: hidden;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .btn::before {
@@ -141,7 +147,12 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.2),
+    transparent
+  );
   transition: left 0.5s;
 }
 
@@ -176,12 +187,9 @@
 .cart-btn {
   background: linear-gradient(135deg, #4CAF50, #45a049);
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
-.cart-btn::before {
+.cart-btn::after {
   content: '🛒';
 }
 
@@ -192,12 +200,9 @@
 .profile-btn {
   background: linear-gradient(135deg, #FF9800, #F57C00);
   box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
-.profile-btn::before {
+.profile-btn::after {
   content: '👤';
 }
 
@@ -216,42 +221,39 @@
   opacity: 0.1;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .header {
     padding: 12px 0;
   }
-  
+
   .header-container {
     flex-direction: column;
     gap: 20px;
     padding: 0 20px;
   }
-  
+
   .logo a {
     font-size: 20px;
     padding: 6px 12px;
   }
-  
+
   .nav-links {
     gap: 15px;
     justify-content: center;
-    padding: 8px 15px;
-    border-radius: 20px;
   }
-  
+
   .nav-links a {
     font-size: 14px;
     padding: 6px 12px;
   }
-  
+
   .user-actions {
     gap: 12px;
     justify-content: center;
     padding: 6px 12px;
     border-radius: 20px;
   }
-  
+
   .btn {
     padding: 8px 16px;
     font-size: 13px;
@@ -262,43 +264,42 @@
   .header {
     padding: 10px 0;
   }
-  
+
   .header-container {
     gap: 15px;
     padding: 0 15px;
   }
-  
+
   .logo a {
     font-size: 18px;
   }
-  
+
   .nav-links {
     gap: 10px;
-    padding: 6px 12px;
   }
-  
+
   .nav-links a {
     font-size: 13px;
     padding: 5px 10px;
   }
-  
+
   .user-actions {
     gap: 8px;
     padding: 5px 10px;
   }
-  
+
   .btn {
     padding: 7px 14px;
     font-size: 12px;
   }
 }
 
-
 @keyframes slideDown {
   from {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -308,16 +309,6 @@
 .header {
   animation: slideDown 0.5s ease-out;
 }
-
-
-.nav-links,
-.user-actions {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
 
 .nav-links:hover,
 .user-actions:hover {

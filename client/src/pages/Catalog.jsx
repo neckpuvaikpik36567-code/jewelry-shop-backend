@@ -9,7 +9,7 @@ import img3 from "../img/vechnost.jpg";
 import img4 from "../img/star.jpg";
 import img5 from "../img/loon.jpg";
 import img6 from "../img/sun.jpg";
-import img7 from "../img/flover.jpg";
+import img7 from "../img/flower.jpg";
 import img8 from "../img/elegant.jpg";
 import img9 from "../img/lebed.jpg";
 import img10 from "../img/cap.jpg";

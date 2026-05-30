@@ -5,6 +5,7 @@ import config from '../config';
 function Checkout() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     firstName: '',
     address: '',
@@ -51,6 +52,18 @@ function Checkout() {
     }
   };
 
+  const calculateTotal = () => {
+    let total = 0;
+    if (cart?.items) {
+      cart.items.forEach((item) => {
+        if (item.productId) {
+          total += item.productId.price * item.quantity;
+        }
+      });
+    }
+    return total;
+  };
+
   const handleOrderSubmit = async (e) => {
     e.preventDefault();
     
@@ -59,11 +72,13 @@ function Checkout() {
       return;
     }
 
+    setProcessingPayment(true);
     const userId = localStorage.getItem("userId");
-    setLoading(true);
+    const total = calculateTotal();
 
     try {
-      const response = await fetch(`${config.apiUrl}/api/orders`, {
+      // Создаем заказ
+      const orderResponse = await fetch(`${config.apiUrl}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,19 +91,39 @@ function Checkout() {
         })
       });
 
-      const data = await response.json();
+      const orderData = await orderResponse.json();
 
-      if (response.ok && data.success) {
-        alert('Заказ успешно оформлен!');
-        navigate('/profile');
-      } else {
-        alert('Ошибка: ' + (data.error || 'Не удалось оформить заказ'));
+      if (!orderResponse.ok || !orderData.success) {
+        throw new Error(orderData.error || 'Не удалось создать заказ');
       }
+
+      // Создаем платеж в YooKassa (используем config.apiUrl вместо localhost)
+      const paymentResponse = await fetch(`${config.apiUrl}/api/create-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': userId
+        },
+        body: JSON.stringify({
+          orderId: orderData.order.id,
+          amount: total,
+          description: `Заказ ${orderData.order.orderNumber}`,
+          returnUrl: `${window.location.origin}/profile`
+        })
+      });
+
+      const paymentData = await paymentResponse.json();
+
+      if (paymentData.success && paymentData.confirmationUrl) {
+        window.location.href = paymentData.confirmationUrl;
+      } else {
+        throw new Error(paymentData.error || 'Не удалось создать платеж');
+      }
+      
     } catch (err) {
       console.error('Ошибка:', err);
-      alert('Ошибка подключения к серверу');
-    } finally {
-      setLoading(false);
+      alert(err.message || 'Ошибка при оформлении заказа');
+      setProcessingPayment(false);
     }
   };
 
@@ -109,15 +144,7 @@ function Checkout() {
     );
   }
 
-  let total = 0;
-  if (cart.items) {
-    cart.items.forEach((item) => {
-      if (item.productId) {
-        const product = item.productId;
-        total += product.price * item.quantity;
-      }
-    });
-  }
+  const total = calculateTotal();
 
   return (
     <div className="checkout-container">
@@ -173,8 +200,8 @@ function Checkout() {
           />
         </div>
 
-        <button type="submit" disabled={loading} className="submit-order-btn">
-          {loading ? 'Оформление...' : 'Подтвердить заказ'}
+        <button type="submit" disabled={processingPayment} className="submit-order-btn">
+          {processingPayment ? 'Обработка...' : `Оплатить ${total} ₽`}
         </button>
       </form>
     </div>
