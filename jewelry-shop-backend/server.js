@@ -1,9 +1,9 @@
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
-
 
 const app = express();
 
@@ -67,10 +67,7 @@ async function createYooKassaPayment(amount, orderId, description, returnUrl, us
 // ПОДКЛЮЧЕНИЕ К MONGODB
 const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(MONGODB_URI)
 .then(() => console.log('✅ MongoDB подключена успешно'))
 .catch(err => console.error('❌ Ошибка подключения MongoDB:', err));
 
@@ -495,11 +492,10 @@ app.delete('/api/admin/users/:userId', async (req, res) => {
 });
 
 // ========== ЗАПУСК ==========
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 СЕРВЕР ЗАПУЩЕН!`);
   console.log(`📍 Порт: ${PORT}`);
-  console.log(`📍 Адрес: http://localhost:${PORT}`);
   console.log(`✅ MongoDB: ${mongoose.connection.readyState === 1 ? 'подключена' : 'не подключена'}`);
   console.log(`💳 YooKassa: ${YOOKASSA_SHOP_ID !== 'ваш_shop_id' ? 'настроена' : 'не настроена'}\n`);
 });
