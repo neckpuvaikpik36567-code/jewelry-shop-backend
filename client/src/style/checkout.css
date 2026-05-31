@@ -1,0 +1,284 @@
+/* checkout.css — стили для страницы оформления заказа */
+
+.checkout-container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff8f3;
+  border-radius: 22px;
+  box-shadow: 0 12px 32px rgba(179, 142, 106, 0.12);
+  border: 1px solid #e5d1c3;
+  font-family: "Georgia", serif;
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* Заголовок */
+.checkout-container h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #8a6c50;
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+  letter-spacing: 0.03rem;
+}
+
+.checkout-container h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 3px;
+  background: linear-gradient(90deg, #b38e6a, #8a6c50);
+  border-radius: 3px;
+  opacity: 0.9;
+}
+
+/* Секция товаров */
+.checkout-items {
+  background: white;
+  border-radius: 18px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1.5px solid #e5d1c3;
+  box-shadow: 0 4px 12px rgba(179, 142, 106, 0.08);
+}
+
+.checkout-items h3 {
+  font-size: 1.3rem;
+  color: #5c3e2b;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5d1c3;
+}
+
+/* Элемент товара в чек-ауте */
+.checkout-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #f0e4d8;
+  font-size: 1rem;
+  color: #5c3e2b;
+}
+
+.checkout-item span:first-child {
+  flex: 2;
+  font-weight: 500;
+}
+
+.checkout-item span:nth-child(2) {
+  flex: 1;
+  text-align: center;
+  color: #b38e6a;
+}
+
+.checkout-item span:last-child {
+  flex: 0.5;
+  text-align: right;
+  font-weight: 600;
+  color: #8a6c50;
+}
+
+.checkout-total {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 2px solid #e5d1c3;
+  font-size: 1.2rem;
+}
+
+.checkout-total strong {
+  font-size: 1.3rem;
+  color: #8a6c50;
+}
+
+/* Форма */
+.checkout-form {
+  background: white;
+  border-radius: 18px;
+  padding: 1.5rem;
+  border: 1.5px solid #e5d1c3;
+  box-shadow: 0 4px 12px rgba(179, 142, 106, 0.08);
+}
+
+.checkout-form h3 {
+  font-size: 1.3rem;
+  color: #5c3e2b;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5d1c3;
+}
+
+/* Группы полей */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #8a6c50;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.02rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid #e5d1c3;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fffefc;
+  transition: all 0.25s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #b38e6a;
+  box-shadow: 0 0 0 3px rgba(179, 142, 106, 0.1);
+}
+
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Кнопка отправки */
+.submit-order-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #b38e6a, #8a6c50);
+  border: none;
+  color: white;
+  padding: 1rem;
+  border-radius: 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin-top: 1rem;
+}
+
+.submit-order-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 109, 79, 0.3);
+}
+
+.submit-order-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Состояния загрузки и ошибки */
+.checkout-loading,
+.checkout-error {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #8a6c50;
+  font-family: "Georgia", serif;
+}
+
+.checkout-error {
+  color: #c44;
+}
+
+/* Пустая корзина (переиспользуется из cart.css, но добавим специфичные стили) */
+.empty-cart {
+  max-width: 600px;
+  margin: 3rem auto;
+  padding: 3rem;
+  text-align: center;
+  background: white;
+  border-radius: 20px;
+  border: 2px dashed #e5d1c3;
+  font-family: "Georgia", serif;
+}
+
+.empty-cart h2 {
+  color: #8a6c50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.empty-cart button {
+  background: linear-gradient(135deg, #b38e6a, #8a6c50);
+  border: none;
+  color: white;
+  padding: 0.7rem 1.5rem;
+  border-radius: 40px;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.empty-cart button:hover {
+  transform: translateY(-2px);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .checkout-container {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  .checkout-container h2 {
+    font-size: 1.6rem;
+  }
+
+  .checkout-item {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .checkout-item span:first-child {
+    flex: 1 1 100%;
+  }
+
+  .checkout-item span:nth-child(2) {
+    text-align: left;
+  }
+
+  .checkout-item span:last-child {
+    text-align: right;
+  }
+
+  .checkout-total {
+    justify-content: center;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.95rem;
+    padding: 0.7rem;
+  }
+
+  .submit-order-btn {
+    padding: 0.8rem;
+    font-size: 1rem;
+  }
+}

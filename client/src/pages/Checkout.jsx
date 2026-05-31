@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import config from '../config';
+import '../style/checkout.css';
 
 function Checkout() {
   const [cart, setCart] = useState(null);
