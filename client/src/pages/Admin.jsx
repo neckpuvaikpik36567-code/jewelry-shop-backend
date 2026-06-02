@@ -1,4 +1,3 @@
-// Admin.jsx - с возможностью добавлять товары
 import React, { useState, useEffect } from 'react';
 import config from '../config';
 import "../style/admin.css"
@@ -18,7 +17,6 @@ function Admin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для формы добавления товара
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
@@ -27,7 +25,7 @@ function Admin() {
     stock: 10
   });
   const [showAddForm, setShowAddForm] = useState(false);
-
+ 
   useEffect(() => {
     const savedKey = localStorage.getItem('adminAuthKey');
     if (savedKey === ADMIN_KEY) {
@@ -74,7 +72,7 @@ function Admin() {
     }
   };
 
-  // ➕ ДОБАВЛЕНИЕ ТОВАРА
+  
   const addProduct = async (e) => {
     e.preventDefault();
     
@@ -106,7 +104,7 @@ function Admin() {
         alert(`Товар "${newProduct.name}" добавлен!`);
         setNewProduct({ name: '', price: '', category: 'rings', imageUrl: '', stock: 10 });
         setShowAddForm(false);
-        loadData(); // Обновляем список
+        loadData(); 
       } else {
         alert('Ошибка: ' + (data.error || 'Не удалось добавить товар'));
       }
@@ -116,7 +114,7 @@ function Admin() {
     }
   };
 
-  // 🗑️ УДАЛЕНИЕ ТОВАРА
+
   const deleteProduct = async (productId, productName) => {
     if (!window.confirm(`Удалить товар "${productName}"?`)) return;
 
@@ -162,7 +160,6 @@ function Admin() {
     }
   };
 
-  // Рендер товаров с формой добавления
   const renderProducts = () => (
     <div className="products-section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -358,7 +355,7 @@ function Admin() {
   return (
     <div className="admin-dashboard">
       <header>
-        <h1>Админ-панель · Jewelry Shop</h1>
+        <h1>Админ-панель · Феерия украшений</h1>
         <button className="logout-btn" onClick={() => {
           localStorage.removeItem('adminAuthKey');
           setIsAuth(false);

@@ -2,13 +2,13 @@ import React, { useEffect } from 'react';
 
 function TestPayment() {
   useEffect(() => {
-    // Загружаем CSS YooKassa
+  
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://yookassa.ru/integration/simplepay/css/yookassa_construct_form.css?v=1.34.0';
     document.head.appendChild(link);
 
-    // Загружаем JS YooKassa
+  
     const script = document.createElement('script');
     script.src = 'https://yookassa.ru/integration/simplepay/js/yookassa_construct_form.js?v=1.34.0';
     document.body.appendChild(script);

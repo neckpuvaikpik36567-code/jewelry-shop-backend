@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import config from '../config';
 import "../style/cart.css";
 
-// Импорт всех изображений
 import img1 from "../img/love.jpg";
 import img2 from "../img/classika.jpg";
 import img3 from "../img/vechnost.jpg";
