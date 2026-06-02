@@ -397,7 +397,7 @@ app.get('/api/orders/user/:userId', async (req, res) => {
   }
 });
 
-// ========== АДМИН МАРШРУТЫ ==========
+
 const ADMIN_KEY = 'super-secret-admin-key-2026';
 
 app.post('/api/admin/products', async (req, res) => {
