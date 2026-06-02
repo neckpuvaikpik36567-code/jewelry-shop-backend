@@ -400,6 +400,18 @@ app.get('/api/orders/user/:userId', async (req, res) => {
 
 const ADMIN_KEY = 'super-secret-admin-key-2026';
 
+app.get('/api/admin/products', async (req, res) => {
+  const key = req.headers['x-admin-key'];
+  if (key !== ADMIN_KEY) {
+    return res.status(403).json({ error: 'Доступ запрещен. Только для администратора.' });
+  }
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.post('/api/admin/products', async (req, res) => {
   const key = req.headers['x-admin-key'];
   if (key !== ADMIN_KEY) {
