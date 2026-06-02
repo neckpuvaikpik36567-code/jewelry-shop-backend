@@ -170,41 +170,66 @@ function Checkout() {
       </div>
 
       <form onSubmit={handleOrderSubmit} className="checkout-form">
-        <h3>Данные для доставки:</h3>
-        
-        <div className="form-group">
-          <label>Имя и фамилия:</label>
-          <input
-            type="text"
-            value={shippingAddress.firstName}
-            onChange={e => setShippingAddress({ ...shippingAddress, firstName: e.target.value })}
-            required
-          />
-        </div>
+  <h3>Данные для доставки:</h3>
 
-        <div className="form-group">
-          <label>Телефон:</label>
-          <input
-            type="tel"
-            value={shippingAddress.phone}
-            onChange={e => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
-            required
-          />
-        </div>
+  <div className="form-group">
+    <label>Имя и фамилия:</label>
+    <input
+      type="text"
+      value={shippingAddress.firstName}
+      onChange={e =>
+        setShippingAddress({
+          ...shippingAddress,
+          firstName: e.target.value
+        })
+      }
+      pattern="^[А-Яа-яA-Za-zЁё\s-]{2,50}$"
+      title="Введите имя и фамилию (только буквы)"
+      required
+    />
+  </div>
 
-        <div className="form-group">
-          <label>Адрес доставки:</label>
-          <textarea
-            value={shippingAddress.address}
-            onChange={e => setShippingAddress({ ...shippingAddress, address: e.target.value })}
-            required
-          />
-        </div>
+  <div className="form-group">
+    <label>Телефон:</label>
+    <input
+      type="tel"
+      value={shippingAddress.phone}
+      onChange={e =>
+        setShippingAddress({
+          ...shippingAddress,
+          phone: e.target.value
+        })
+      }
+      pattern="^\+?[0-9]{10,15}$"
+      title="Введите корректный номер телефона"
+      required
+    />
+  </div>
 
-        <button type="submit" disabled={processingPayment} className="submit-order-btn">
-          {processingPayment ? 'Обработка...' : `Оплатить ${total} ₽`}
-        </button>
-      </form>
+  <div className="form-group">
+    <label>Адрес доставки:</label>
+    <textarea
+      value={shippingAddress.address}
+      onChange={e =>
+        setShippingAddress({
+          ...shippingAddress,
+          address: e.target.value
+        })
+      }
+      minLength={10}
+      title="Адрес должен содержать минимум 10 символов"
+      required
+    />
+  </div>
+
+  <button
+    type="submit"
+    disabled={processingPayment}
+    className="submit-order-btn"
+  >
+    {processingPayment ? "Обработка..." : `Оплатить ${total} ₽`}
+  </button>
+</form>
     </div>
   );
 }

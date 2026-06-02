@@ -439,6 +439,7 @@ app.post('/api/admin/products', async (req, res) => {
   }
 });
 
+
 app.put('/api/admin/products/:id', async (req, res) => {
   const key = req.headers['x-admin-key'];
   if (key !== ADMIN_KEY) {
